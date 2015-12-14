@@ -1,0 +1,23 @@
+for brainweb simulation with 40 dB SNR
+
+ADMM ALP2 without wavelets
+optimal beta is 42
+
+for snr 80, coil radius 700, undersampling 6, sim image
+beta = 1.85
+
+
+Since thresholding seemed adequate, keep mu0 and mu1 at 1
+
+condition numbers for 
+u2 update: 	H: F'F+mu2 I				K: (1+mu2)/mu2
+u3 update: 	H: mu1 C2'C2 +mu2(1-alph)^2 S'S+mu3 I	K: (lmax(B2)+mu3)/(lmin(B2)+mu3
+x update: 	H: mu0 C1'C1+mu2 alph^2 S'S+mu4 I	K: (lmax(B1)+mu4)/(lmin(B1)+mu4
+
+B2 = mu1 C2'C2 + mu2 (1-alph)^2 S'S
+B1 = mu0 C1'C1 + mu2 alph^2 S'S
+
+to do: show effect of alpha
+
+
+
