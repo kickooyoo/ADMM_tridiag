@@ -1,4 +1,5 @@
 function A_inv = invert_tridiag(a,b,c,o)
+% function A_inv = invert_tridiag(a,b,c,o)
 % assume tridiagonal matrix is of form diagonal + tri-diagonal circulant
 % A = diag(a)+diag(b,1)+diag(c,-1);
 % a: center diagonal
