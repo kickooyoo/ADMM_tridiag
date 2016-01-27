@@ -111,18 +111,18 @@ function z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, nx, ny, 
 % arg.method = 'CG'; % CG
 % switch arg.method
 %         case 'CG'
-                n1 = length(v);
-                n2 = length(x);
-                W = Gdiag([u_v*ones(1,n1) u_z*ones(1,n2)]);
-                A = [Gmatrix(R); Gmatrix(Gdiag(ones(1,n2)))]; % nightmare, pass in
-                y = [v-eta_v; x+eta_z];
-                try
-                        [z_pcg, info] = qpwls_pcg1(z, A, W, y, Gdiag(zeros(n2,1)), ...
-                                'niter', 20, 'stop_grad_tol', 1e-11, 'precon', A'*A);
-                catch
-                        display('qpwls failed');
-                        keyboard
-                end
+%                 n1 = length(v);
+%                 n2 = length(x);
+%                 W = Gdiag([u_v*ones(1,n1) u_z*ones(1,n2)]);
+%                 A = [Gmatrix(R); Gmatrix(Gdiag(ones(1,n2)))]; % nightmare, pass in
+%                 y = [v-eta_v; x+eta_z];
+%                 try
+%                         [z_pcg, ~] = qpwls_pcg1(z, A, W, y, Gdiag(zeros(n2,1)), ...
+%                                 'niter', 20, 'stop_grad_tol', 1e-11, 'precon', A'*A);
+%                 catch
+%                         display('qpwls failed');
+%                         keyboard
+%                 end
 %         case 'fft'
                 rhs = reshape(u_v*R'*(v - eta_v) + u_z*(x + eta_z), nx, ny);
                 %z_fft = ifft2((fft2(rhs))./(reshape(u_v*eigvalsrr+u_z*ones(nx*ny,1),nx,ny)));
@@ -133,7 +133,7 @@ function z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, nx, ny, 
 %         otherwise
 %                 display(sprintf('unknown option for z-update: %s', method));
 % end
-display(sprintf('z diff: %d', norm(z_pcg - z_fft)/numel(z)));
+% display(sprintf('z diff: %d', norm(z_pcg - z_fft)/numel(z)));
 z = z_fft;
 end
 

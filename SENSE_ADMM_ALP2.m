@@ -150,32 +150,39 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 	% transpose,  stretch, apply C1'C1
 	flipu3 = single(reshape(u3,nx,ny));
 	flipu3 = flipu3.';
-	flipu3 = flipu3(:);
+% 	flipu3 = flipu3(:);
 	flipSS = reshape(eig_SS,nx,ny);
 	flipSS = flipSS.';
 	flip_eig_SS = flipSS(:);
 
 	% construct diagonal entries
-	subdiag = single(-mu(2)*ones(nx*ny-1,1));
-	subdiag(ny:ny:end) = 0;
-
-	supdiag = subdiag;
-
-	diagvals = single(2*ones(nx*ny,1));
-	diagvals(1:ny:end) = 1;
-	diagvals(ny:ny:end) = 1;
-	diagvals = mu(2)*diagvals+mu(3)*(1-alph)^2.*flip_eig_SS+mu(4);
-   
-	u3old = zeros(nx*ny,1);
-	%tridiag_start = tic;
-	for block_ndx=1:nx
-		u3old((block_ndx-1)*ny+1:block_ndx*ny) = apply_tridiag_inv(subdiag((block_ndx-1)*ny+1:block_ndx*ny-1),diagvals((block_ndx-1)*ny+1:block_ndx*ny),supdiag((block_ndx-1)*ny+1:block_ndx*ny-1),flipu3((block_ndx-1)*ny+1:block_ndx*ny));        
-        end
-        u3out = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, flipu3, nthread);
-        if(norm(u3old - u3out)/numel(u3) > 1e-3)
-                display('u3 tridiag mex val does not match matlab');
-                keyboard;
-        end
+% 	subdiag = single(-mu(2)*ones(nx*ny-1,1));
+% 	subdiag(ny:ny:end) = 0;
+% 
+% 	supdiag = subdiag;
+% 
+% 	diagvals = single(2*ones(nx*ny,1));
+% 	diagvals(1:ny:end) = 1;
+% 	diagvals(ny:ny:end) = 1;
+% 	diagvals = mu(2)*diagvals+mu(3)*(1-alph)^2.*flip_eig_SS+mu(4);
+%    
+% 	u3old = zeros(nx*ny,1);
+% 	%tridiag_start = tic;
+% 	for block_ndx=1:nx
+% 		u3old((block_ndx-1)*ny + 1 : block_ndx*ny) = apply_tridiag_inv( ...
+%                         subdiag((block_ndx-1)*ny + 1 : block_ndx*ny - 1), ...
+%                         diagvals((block_ndx-1)*ny + 1 : block_ndx*ny), ...
+%                         supdiag((block_ndx-1)*ny + 1 : block_ndx*ny - 1), ...
+%                         flipu3((block_ndx-1)*ny + 1 : block_ndx*ny));        
+%         end 
+        subdiag = single(-mu(2)*ones(ny - 1, nx));
+        diagvals = cat(1, ones(1, nx), 2*ones(ny-2, nx), ones(1, nx));
+        diagvals = single(mu(2)*diagvals + mu(3) * (1-alph)^2 * flipSS + mu(4));
+        u3out = tridiag_inv_mex_noni(subdiag, diagvals, subdiag, flipu3, nthread);
+%         if(norm(u3old - u3out)/numel(u3) > 1e-3)
+%                 display('u3 tridiag mex val does not match matlab');
+%                 keyboard;
+%         end
 	%tridiag_time = toc(tridiag_start);
 	%tridiag_time_per_block = tridiag_time/nx;
 	%time_subtract = ceil(nx*7/8)*tridiag_time_per_block; %numcores = 4

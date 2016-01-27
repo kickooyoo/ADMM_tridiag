@@ -67,7 +67,8 @@ SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3))
 
 % finite-differencing matrices C1 and C2
 [C1, C2] = construct_finite_diff(dims); % not circulant!
-R = Cdiffs([nx ny],'type_diff','circshift'); %circulant!
+% R = Cdiffs([nx ny],'type_diff','circshift'); %circulant!
+R = [C1; C2];
 
 % choose parameters
 
@@ -86,6 +87,10 @@ beta = 2^20.1;
 niters = 5000;
 %niters = 100;
 
+[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,0,niters);
+[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,0);
+		
+return
 %for beta_ndx = 1:length(betas)
 	%beta = betas(beta_ndx);
 
