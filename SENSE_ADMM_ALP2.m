@@ -28,11 +28,19 @@ eta4 = zeros(size(x));
 %display('check inner dims of Q');
 %keyboard;
 SS = S'*S;
-eig_SS = SS*ones(prod(S.idim),1); % diagonal, not BCCB
+eig_SS = reshape(SS*ones(prod(S.idim),1), nx, ny); % diagonal, not BCCB
+
+subCCT = single(-mu(2)*ones(ny - 1, nx));
+diagCCT = single(mu(2)*cat(1, ones(1, nx), 2*ones(ny-2, nx), ones(1, nx)));
+subCC = single(-mu(1)*ones(nx - 1, ny));
+diagCC = single(mu(1)*cat(1, ones(1, ny), 2*ones(nx-2, ny), ones(1, ny)));
+
+
 time = zeros(niters,1);
 mask = true(nx,ny);%generate_mask('slice67',1,nx,ny);
 err(1) = calc_NRMSE_over_mask(x,xtrue(:),mask);
 cost(1) = calc_cost(beta,C1,C2,F,S,y,x);
+
 while(iter < niters)
     
 	iter_start = tic;
@@ -46,10 +54,10 @@ while(iter < niters)
     u2 = u2_update(mu(3),alph,eig_FF,Qbig,F,S,y,u3,x,eta2,nx,ny,nc);
 
     % u3 update
-    u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny);
+    u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny, subCCT, diagCCT);
 
     % x update
-    x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny);
+    x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny, subCC, diagCC);
     
     % skip v0, v1, v2 because they are constrained to be zero
     
@@ -141,7 +149,7 @@ function u2 = u2_update(mu2,alph,eig_FF,Q,F,S,y,u3,x,eta2,nx,ny,nc)
 	u2 = new_u2;
 end
 
-function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
+function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny, subCCT, diagCCT)
 	u3 = mu(2)*C2'*(u1+eta1)+mu(3)*(1-alph)*S'*(u2-alph*S*x+eta2)+mu(4)*(-v3-eta3);
 
         nthread = int32(jf('ncore'));
@@ -151,8 +159,7 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 	flipu3 = single(reshape(u3,nx,ny));
 	flipu3 = flipu3.';
 % 	flipu3 = flipu3(:);
-	flipSS = reshape(eig_SS,nx,ny);
-	flipSS = flipSS.';
+	flipSS = eig_SS.';
 	flip_eig_SS = flipSS(:);
 
 	% construct diagonal entries
@@ -175,10 +182,8 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 %                         supdiag((block_ndx-1)*ny + 1 : block_ndx*ny - 1), ...
 %                         flipu3((block_ndx-1)*ny + 1 : block_ndx*ny));        
 %         end 
-        subdiag = single(-mu(2)*ones(ny - 1, nx));
-        diagvals = cat(1, ones(1, nx), 2*ones(ny-2, nx), ones(1, nx));
-        diagvals = single(mu(2)*diagvals + mu(3) * (1-alph)^2 * flipSS + mu(4));
-        u3out = tridiag_inv_mex_noni(subdiag, diagvals, subdiag, flipu3, nthread);
+        diagvals = single(diagCCT + mu(3) * (1-alph)^2 * flipSS + mu(4));
+        u3out = tridiag_inv_mex_noni(subCCT, diagvals, subCCT, flipu3, nthread);
 %         if(norm(u3old - u3out)/numel(u3) > 1e-3)
 %                 display('u3 tridiag mex val does not match matlab');
 %                 keyboard;
@@ -197,37 +202,28 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 %	u3 = test;
 end
 
-function x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny)
+function x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny, subCC, diagCC)
         nthread = int32(jf('ncore'));
-	x = single(mu(1)*C1'*(u0+eta0)+mu(3)*alph*S'*(u2-(1-alph)*S*u3+eta2)+mu(5)*(v4+eta4));
-
-	subdiag = single(-1*ones(nx*ny-1,1));
-	subdiag(nx:nx:end) = 0;
-	
-	supdiag = subdiag;
-	
-	diagvals = single(2*ones(nx*ny,1));
-	diagvals(1:nx:end) = 1;
-	diagvals(nx:nx:end) = 1;
-	diagvals = mu(1)*diagvals+mu(3)*alph^2.*eig_SS+mu(5);
+	x = mu(1)*C1'*(u0+eta0) + mu(3)*alph*S'*(u2-(1-alph)*S*u3 + eta2) + mu(5)*(v4+eta4);
+	x = single(reshape(x, nx, ny));
+	diagvals = diagCC + mu(3)*alph^2.*eig_SS + mu(5);
 	
 	%xout = apply_tridiag_inv(subdiag,diagvals,supdiag,x);
 	
-	xold = zeros(nx*ny,1);
+%	xold = zeros(nx*ny,1);
 % 	tridiag_start = tic;
-	for block_ndx = 1:ny
-		xold((block_ndx-1)*nx+1:block_ndx*nx) = apply_tridiag_inv(subdiag((block_ndx-1)*nx+1:block_ndx*nx-1),diagvals((block_ndx-1)*nx+1:block_ndx*nx),supdiag((block_ndx-1)*nx+1:block_ndx*nx-1),x((block_ndx-1)*nx+1:block_ndx*nx));
-	end
+%	for block_ndx = 1:ny
+%		xold((block_ndx-1)*nx+1:block_ndx*nx) = apply_tridiag_inv(subdiag((block_ndx-1)*nx+1:block_ndx*nx-1),diagvals((block_ndx-1)*nx+1:block_ndx*nx),supdiag((block_ndx-1)*nx+1:block_ndx*nx-1),x((block_ndx-1)*nx+1:block_ndx*nx));
+%	end
 % 	tridiag_time = toc(tridiag_start);
 % 	tridiag_time_per_block = tridiag_time/nx;
 % 	time_subtract = ceil(ny*7/8)*tridiag_time_per_block; %numcores = 4
-	xout = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, x, nthread);
-        if(norm(xold - xout)/numel(x) > 1e-3)
-                display('tridiag mex val does not match matlab');
-                keyboard
-        end
+	x = tridiag_inv_mex_noni(subCC, diagvals, subCC, x, nthread);
+%        if(norm(xold - xout)/numel(x) > 1e-3)
+%                display('tridiag mex val does not match matlab');
+%                keyboard
+%        end
 	
-	x = xout;
 	%x = A*x;
         
         

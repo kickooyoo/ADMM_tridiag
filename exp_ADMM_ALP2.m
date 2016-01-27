@@ -2,11 +2,12 @@
 
 
 
-fn = '~/Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7';
+fn = [home 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
+
 nc = 8;
 [im4d,d] = recon3dft(fn,nc);
 % what is d?
-[body_coil_images,d] = recon3dft('~/Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7',1);
+[body_coil_images,d] = recon3dft([home 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
 % slice = 38; % what sathish used 
 % Muckley and Dan complained, so switch to 67
 slice = 67;
@@ -19,7 +20,7 @@ dims = [nx ny];
 
 % need to esetimate sense maps for other slices
 % for slice 67
-load('~/Documents/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat');
+load([home 'Documents/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat']);
 sense_maps = S_est;
 clear S_est;
 
@@ -87,10 +88,7 @@ beta = 2^20.1;
 niters = 5000;
 %niters = 100;
 
-[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,0,niters);
-[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,0);
-		
-return
+
 %for beta_ndx = 1:length(betas)
 	%beta = betas(beta_ndx);
 
@@ -100,6 +98,14 @@ return
 	%alph = 1;
 	% mu, convergence parameters
 	mu = ones(1,5);
+return;
+        load([home 'Documents/mai_code/ADMM_tridiag/reviv/tri_chcv_5000iter.mat'],'xhat_tri')
+        x_tri_inf = xhat_tri;
+[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,x_tri_inf,niters);
+%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,0);
+		
+return		
+
 
 	%% 
 	if tri

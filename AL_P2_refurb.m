@@ -54,16 +54,20 @@ xsave = zeros(nx, ny, niters);
 % [k_u,k_v,k_x] = diag_cond_numbers(eigvalsmssm, eigvalsrr, npix, Q, R, M, S, A, u_u, u_v, u_z);
 time = zeros(niters,1);
 %tic
+maxv = 1e8;
 for ii=1:niters
         iter_start = tic;
         x = x_update(S, u, z, eta_u, eta_z, u_u, u_z, eigvalsss);
-        if any(isnan(x))
+        if any(isnan(x)) || any(isinf(x)) || any(x > maxv)
                 keyboard
         end
         u = u_update(Qbig, A, S, y, x, eta_u, u_u, npix, eigvalsaa);
         %v = soft(R*x + eta_v, lambda/u_v);
         v = soft(R*z + eta_v, lambda/u_v); % TEST THIS
         z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, nx, ny, arg);
+        if any(isnan(z)) || any(isinf(z)) || any(z > maxv)
+                keyboard
+        end
         eta_u = eta_u - (u - S*x);
         eta_v = eta_v - (v - R*z);
         eta_z = eta_z - (z - x);

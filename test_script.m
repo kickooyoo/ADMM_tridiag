@@ -51,7 +51,7 @@ mu(7) = 1;
 mu(8) = 1;
 mu(9) = 1;
 
-load('~/Dropbox/fessler/experimental_data/tridiag_vega/xinf_via_ALP2_xinf_only')
+load([home 'Dropbox/fessler/experimental_data/tridiag_vega/xinf_via_ALP2_xinf_only'])
 
 xzfill = S'*(F'*noisey);
 xzfill = ir_wls_init_scale((F*S), noisey, xzfill);
