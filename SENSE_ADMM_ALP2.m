@@ -133,7 +133,7 @@ end
 
 function u2 = u2_update(mu2,alph,eig_FF,Q,F,S,y,u3,x,eta2,nx,ny,nc)
 	arg_u2 = F'*y+mu2*((1-alph)*S*u3+alph*S*x-eta2);
-	new_u2 = Q'*((Q*arg_u2)./(eig_FF+mu2))/(nx*ny);
+	u2 = Q'*((Q*arg_u2)./(eig_FF+mu2))/(nx*ny);
 	
 
 %	A = full(F'*F);
@@ -146,7 +146,6 @@ function u2 = u2_update(mu2,alph,eig_FF,Q,F,S,y,u3,x,eta2,nx,ny,nc)
 %	title('u2 update');
 %	legend('my soln','backslash soln');
 %	keyboard; % passed test! :)
-	u2 = new_u2;
 end
 
 function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny, subCCT, diagCCT)

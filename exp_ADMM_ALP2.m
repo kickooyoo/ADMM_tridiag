@@ -1,6 +1,7 @@
 % experimental data for SENSE_ADMM_ALP2
 
 
+truncate = 1;
 
 fn = [home 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
 
@@ -8,12 +9,18 @@ nc = 8;
 [im4d,d] = recon3dft(fn,nc);
 % what is d?
 [body_coil_images,d] = recon3dft([home 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
+
+% here we clip the images to see affect of factors of 2 on the FFT
+if truncate
+	im4d = im4d(3:end-2,3:end-2,:,:); % size orig [256 144], now [254 140]
+end
+
 % slice = 38; % what sathish used 
 % Muckley and Dan complained, so switch to 67
 slice = 67;
 mapped_im = squeeze(im4d(:,:,slice,:));
-nx = size(im4d,1);
-ny = size(im4d,2);
+nx = size(im4d,1)
+ny = size(im4d,2)
 
 
 dims = [nx ny];
@@ -21,7 +28,11 @@ dims = [nx ny];
 % need to esetimate sense maps for other slices
 % for slice 67
 load([home 'Documents/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat']);
-sense_maps = S_est;
+if truncate
+	sense_maps = S_est(3:end-2,3:end-2,:);
+else
+	sense_maps = S_est;
+end
 clear S_est;
 
 
@@ -79,15 +90,11 @@ alp2 = 1;
 alp2w = 0;
 
 % beta, spatial regularization parameter
-%betas = 2.^(13:0.5:15);%2^15.8
-%beta = 0.52; % or beta = 5+; % for toy case
 %beta = 2^14; % to match SoS compensate, for ALP2, reduction 3, up to 100 iters
 %beta = 2^15.8; % to match body coil image, for ALP2, reduction 3
 %betas = 2.^(18.5:.2:22);
 beta = 2^20.1;
 niters = 5000;
-%niters = 100;
-
 
 %for beta_ndx = 1:length(betas)
 	%beta = betas(beta_ndx);
@@ -98,12 +105,30 @@ niters = 5000;
 	%alph = 1;
 	% mu, convergence parameters
 	mu = ones(1,5);
-return;
         load([home 'Documents/mai_code/ADMM_tridiag/reviv/tri_chcv_5000iter.mat'],'xhat_tri')
-        x_tri_inf = xhat_tri;
+	if truncate
+		xhat_tri = reshape(xhat_tri, 256, 144);
+		xtri_inf = xhat_tri(3:end-2,3:end-2);
+	else
+        	x_tri_inf = xhat_tri;
+	end
+
 [xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,x_tri_inf,niters);
-%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,0);
-		
+
+%	load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_circ_5000iter.mat'],'xhat_alp2');
+%	x_alp2_inf = xhat_alp2;
+%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+
+load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_chcv_5000iter.mat'],'xhat_alp2');	
+if truncate
+	xhat_alp2 = reshape(xhat_alp2, 256, 144);
+	x_alp2_inf = xhat_alp2(3:end-2, 3:end-2);
+else
+	x_alp2_inf = xhat_alp2;
+end
+[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+
+
 return		
 
 
