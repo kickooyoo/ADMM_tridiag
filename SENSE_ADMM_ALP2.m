@@ -172,7 +172,7 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 		u3old((block_ndx-1)*ny+1:block_ndx*ny) = apply_tridiag_inv(subdiag((block_ndx-1)*ny+1:block_ndx*ny-1),diagvals((block_ndx-1)*ny+1:block_ndx*ny),supdiag((block_ndx-1)*ny+1:block_ndx*ny-1),flipu3((block_ndx-1)*ny+1:block_ndx*ny));        
         end
         u3out = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, flipu3, nthread);
-        if(norm(u3old - u3out) > 1e-3)
+        if(norm(u3old - u3out)/numel(u3) > 1e-3)
                 display('u3 tridiag mex val does not match matlab');
                 keyboard;
         end
@@ -215,7 +215,7 @@ function x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny)
 % 	tridiag_time_per_block = tridiag_time/nx;
 % 	time_subtract = ceil(ny*7/8)*tridiag_time_per_block; %numcores = 4
 	xout = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, x, nthread);
-        if(norm(xold - xout) > 1e-3)
+        if(norm(xold - xout)/numel(x) > 1e-3)
                 display('tridiag mex val does not match matlab');
                 keyboard
         end

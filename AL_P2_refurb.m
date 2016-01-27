@@ -116,9 +116,13 @@ function z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, nx, ny, 
                 W = Gdiag([u_v*ones(1,n1) u_z*ones(1,n2)]);
                 A = [Gmatrix(R); Gmatrix(Gdiag(ones(1,n2)))]; % nightmare, pass in
                 y = [v-eta_v; x+eta_z];
-                [z_pcg, info] = qpwls_pcg1(z, A, W, y, Gdiag(zeros(n2,1)), ...
-                        'niter', 20, 'stop_grad_tol', 1e-11, 'precon', A'*A);
-                
+                try
+                        [z_pcg, info] = qpwls_pcg1(z, A, W, y, Gdiag(zeros(n2,1)), ...
+                                'niter', 20, 'stop_grad_tol', 1e-11, 'precon', A'*A);
+                catch
+                        display('qpwls failed');
+                        keyboard
+                end
 %         case 'fft'
                 rhs = reshape(u_v*R'*(v - eta_v) + u_z*(x + eta_z), nx, ny);
                 %z_fft = ifft2((fft2(rhs))./(reshape(u_v*eigvalsrr+u_z*ones(nx*ny,1),nx,ny)));
@@ -130,7 +134,7 @@ function z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, nx, ny, 
 %                 display(sprintf('unknown option for z-update: %s', method));
 % end
 display(sprintf('z diff: %d', norm(z_pcg - z_fft)/numel(z)));
-z = z_pcg;
+z = z_fft;
 end
 
 function cost = calc_AL_cost(A, S, R, y, x, u, v, z, u_u, u_v, u_z, eta_u, ...
