@@ -1,4 +1,4 @@
-% experimental data for SENSE_ADMM_ALP2
+% experimental data for tridiag_ADMM
 
 
 truncate = 1;
@@ -113,11 +113,11 @@ niters = 5000;
         	x_tri_inf = xhat_tri;
 	end
 
-[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,x_tri_inf,niters);
+[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y,F,S,C1,C2,alph,beta,SoS,x_tri_inf,niters,'mu', mu);
 
 %	load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_circ_5000iter.mat'],'xhat_alp2');
 %	x_alp2_inf = xhat_alp2;
-%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,mu,x_alp2_inf);
 
 load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_chcv_5000iter.mat'],'xhat_alp2');	
 if truncate
@@ -126,7 +126,7 @@ if truncate
 else
 	x_alp2_inf = xhat_alp2;
 end
-[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2_inf);
 
 
 return		
@@ -134,7 +134,7 @@ return
 
 	%% 
 	if tri
-		[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = SENSE_ADMM_ALP2(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,x_tri_inf,niters);
+		[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y,F,S,C1,C2,alph,beta,SoS,x_tri_inf,niters,'mu', mu);
 		xhat_tri = reshape(xhat_tri,nx,ny);
 		scaling_SoS = normalize_images(SoS_compensate, {xhat_tri});
 		scaling_bc = normalize_images(body_coil_images(:,:,slice), {xhat_tri});
@@ -147,7 +147,7 @@ return
 		
 	end
 	if triw
-		[xhat_triw, xsaved_triw, nrmsd_triw, costOrig_triw, time_triw] = SENSE_ADMM_ALP2_wavelets(y,F,S,C1,C2,alph,beta,mu,nx,ny,SoS,x_triw_inf,niters);
+		[xhat_triw, xsaved_triw, nrmsd_triw, costOrig_triw, time_triw] = tridiag_ADMM_wavelets(y,F,S,C1,C2,alph,beta,SoS,x_triw_inf,niters,'mu', mu);
 		xhat_triw = reshape(xhat_triw,nx,ny);
 		scaling_SoS = normalize_images(SoS_compensate, {xhat_triw});
 		scaling_bc = normalize_images(body_coil_images(:,:,slice), {xhat_triw});
@@ -159,7 +159,7 @@ return
 		clear xsaved_triw xhat_triw nrmsd_triw costOrig_triw time_triw;
 	end
 	if alp2
-		[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_refurb(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+		[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,R,SoS,niters,beta,mu,x_alp2_inf);
 		xhat_alp2 = reshape(xhat_alp2,nx,ny);
 		scaling_SoS = normalize_images(SoS_compensate, {xhat_alp2});
 		scaling_bc = normalize_images(body_coil_images(:,:,slice), {xhat_alp2});
@@ -170,7 +170,7 @@ return
 		clear xsaved_alp2 xhat_alp2 nrmsd_alp2 costOrig_alp2 time_alp2;
 	end
 	if alp2w
-		[xhat_alp2w, xsaved_alp2w, nrmsd_alp2w, costOrig_alp2w,time_alp2w] = AL_P2_refurb_wavelets(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2w_inf);
+		[xhat_alp2w, xsaved_alp2w, nrmsd_alp2w, costOrig_alp2w,time_alp2w] = AL_P2_gen_wavelets(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2w_inf);
 		xhat_alp2w = reshape(xhat_alp2w,nx,ny);
 		scaling_SoS = normalize_images(SoS_compensate, {xhat_alp2w});
 		scaling_bc = normalize_images(body_coil_images(:,:,slice), {xhat_alp2w});

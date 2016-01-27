@@ -51,6 +51,8 @@ mu(7) = 1;
 mu(8) = 1;
 mu(9) = 1;
 
+% [k_u,k_v,k_x] = diag_cond_numbers(eigvalsmssm, eigvalsrr, Nx*Ny, Q, R, M, S, A, u_u, u_v, u_z);
+
 load([home 'Dropbox/fessler/experimental_data/tridiag_vega/xinf_via_ALP2_xinf_only'])
 
 xzfill = S'*(F'*noisey);
@@ -60,7 +62,7 @@ xinit = xzfill;%zeros(nx,ny);
 %%
 
 % ALP2
-[xhat_P2, xsaved_P2, err_P2, costOrig_P2] = AL_P2_refurb(noisey, F, S, [C1; C2],...
+[xhat_P2, xsaved_P2, err_P2, costOrig_P2] = AL_P2_gen(noisey, F, S, [C1; C2],...
         xinit, niters, beta, mu(1:3), nx, ny, img);
 
 for iter = 1:niters
@@ -68,8 +70,8 @@ for iter = 1:niters
 end
 
 % tridiag solver
-[xhat_tri, xsaved_tri, cost_tri] = SENSE_ADMM_ALP2(noisey, F, S, C1, C2, ...
-        alph, beta, mu(1:5), nx, ny, xinit, img, niters); % xtrue should be xinf
+[xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM(noisey, F, S, C1, C2, ...
+        alph, beta, xinit, img, niters, 'mu', mu(1:5)); % xtrue should be xinf
 
 for iter = 1:niters
         dist_to_xinf_tri(iter) = sqrt(sum(abs(col(xsaved_tri(:,:,iter)) - xinf(:)).^2)/(nx*ny));
@@ -83,6 +85,7 @@ end
 % for iter = 1:niters
 %         dist_to_xinf_FP(iter) = sqrt(sum(abs(col(xsaved_FP(:,:,iter)) - xinf(:)).^2)/(nx*ny));
 % end
+
 
 return
 save('races_results.mat','beta','alph','err','xhat_P2','xsaved_P2','dist_to_xinf_P2','xhat_tri','xsaved_tri','dist_to_xinf_tri','xhat_FP','xsaved_tri','dist_to_xinf_FP','img','noisey','F','S','C1','C2','mu','snr');
