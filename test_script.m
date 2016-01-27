@@ -20,7 +20,7 @@ S = GsplineS(sense_maps, 1);
 
 % subsampling Fourier encoding matrix F
 % F = construct_fourierfat(samp,nc);
-F = GsplineF(nx, ny, 1, nc);
+F = GsplineF(nx, ny, 1, nc, 'samp', samp);
 
 y = F*(S*img(:));
 snr = 40; % specify desired SNR (of sampled values!) in dB

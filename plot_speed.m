@@ -2,11 +2,7 @@ load tri_chcv_5000iter
 load tri_wavelet_chcv_5000iter
 load al_p2_rcirc_500iter
 load al_p2_wavelet_rcirc_500iter
-<<<<<<< HEAD
-%
-=======
 
->>>>>>> ea235d10d22b51ac5cba3d65dfbd84ee1ca5e7d9
 figure; plot(cumsum([0; time_alp2]), nrmsd_alp2);
 hold on;
 mask = generate_mask('slice67',1,nx,ny);   

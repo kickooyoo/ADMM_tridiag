@@ -30,7 +30,7 @@ eta4 = zeros(size(x));
 SS = S'*S;
 eig_SS = SS*ones(prod(S.idim),1); % diagonal, not BCCB
 time = zeros(niters,1);
-mask = generate_mask('slice67',1,nx,ny);
+mask = true(nx,ny);%generate_mask('slice67',1,nx,ny);
 err(1) = calc_NRMSE_over_mask(x,xtrue(:),mask);
 cost(1) = calc_cost(beta,C1,C2,F,S,y,x);
 while(iter < niters)
@@ -116,7 +116,7 @@ function AL_cost = calc_AL_cost(mu,alph,beta,C1,C2,F,S,y,u0,u1,u2,u3,x,v3,eta0,e
 end
 
 function cost = calc_cost(beta,C1,C2,F,S,y,x)
-	cost = norm(y-F*(S*x),2)^2/2 + beta*norm(C1*x,1) + beta*norm(C2*x,1);
+	cost = norm(col(y)-col(F*(S*x)),2)^2/2 + beta*norm(C1*x,1) + beta*norm(C2*x,1);
 end
 
 function out = soft(in,thresh)
@@ -172,7 +172,10 @@ function u3 = u3_update(mu,alph,eig_SS,C1,C2,S,u1,u2,x,v3,eta1,eta2,eta3,nx,ny)
 		u3old((block_ndx-1)*ny+1:block_ndx*ny) = apply_tridiag_inv(subdiag((block_ndx-1)*ny+1:block_ndx*ny-1),diagvals((block_ndx-1)*ny+1:block_ndx*ny),supdiag((block_ndx-1)*ny+1:block_ndx*ny-1),flipu3((block_ndx-1)*ny+1:block_ndx*ny));        
         end
         u3out = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, flipu3, nthread);
-        assert(norm(u3old - u3out) < 1e-3, 'u3 tridiag mex val does not match matlab');
+        if(norm(u3old - u3out) > 1e-3)
+                display('u3 tridiag mex val does not match matlab');
+                keyboard;
+        end
 	%tridiag_time = toc(tridiag_start);
 	%tridiag_time_per_block = tridiag_time/nx;
 	%time_subtract = ceil(nx*7/8)*tridiag_time_per_block; %numcores = 4
@@ -212,7 +215,10 @@ function x = x_update(mu,alph,eig_SS,C1,S,u0,u2,u3,v4,eta0,eta2,eta4,nx,ny)
 % 	tridiag_time_per_block = tridiag_time/nx;
 % 	time_subtract = ceil(ny*7/8)*tridiag_time_per_block; %numcores = 4
 	xout = tridiag_inv_mex_noni(subdiag, diagvals, supdiag, x, nthread);
-        assert(norm(xold - xout) < 1e-3, 'tridiag mex val does not match matlab');
+        if(norm(xold - xout) > 1e-3)
+                display('tridiag mex val does not match matlab');
+                keyboard
+        end
 	
 	x = xout;
 	%x = A*x;

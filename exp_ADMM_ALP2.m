@@ -2,11 +2,11 @@
 
 
 
-fn = './mai/static_SENSE_splitting/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7';
+fn = '~/Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7';
 nc = 8;
 [im4d,d] = recon3dft(fn,nc);
 % what is d?
-[body_coil_images,d] = recon3dft('./mai/static_SENSE_splitting/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7',1);
+[body_coil_images,d] = recon3dft('~/Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7',1);
 % slice = 38; % what sathish used 
 % Muckley and Dan complained, so switch to 67
 slice = 67;
@@ -19,18 +19,30 @@ dims = [nx ny];
 
 % need to esetimate sense maps for other slices
 % for slice 67
-load('mai/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat');
+load('~/Documents/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat');
 sense_maps = S_est;
 clear S_est;
 
 
-S = construct_sensefat(sense_maps);
+% S = construct_sensefat(sense_maps);
 
 reduction = 6;
-samp = gen_poisson_sampling_pattern('2D',[nx ny],[ceil(nx/16) ceil(ny/16)],reduction);
+% samp = gen_poisson_sampling_pattern('2D',[nx ny],[ceil(nx/16) ceil(ny/16)],reduction);
+params.Nx = nx;
+params.Ny = ny;
+params.Nf = 1;
+params.h = 1;
+params.R = round(nx*ny/reduction);
+samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0));
 
 % subsampling Fourier encoding matrix F
-F = construct_fourierfat(samp,nc);
+% F = construct_fourierfat(samp,nc);
+
+S = GsplineS(sense_maps, 1);
+
+% subsampling Fourier encoding matrix F
+% F = construct_fourierfat(samp,nc);
+F = GsplineF(nx, ny, 1, nc, 'samp', samp);
 
 %for coil_ndx = 1:nc
 %	y_full(:,:,coil_ndx) = fft2(imgs(:,:,coil_ndx)); 
@@ -59,9 +71,9 @@ R = Cdiffs([nx ny],'type_diff','circshift'); %circulant!
 
 % choose parameters
 
-tri = 0;
-triw = 1;
-alp2 = 0;
+tri = 1;
+triw = 0;
+alp2 = 1;
 alp2w = 0;
 
 % beta, spatial regularization parameter
