@@ -1,6 +1,6 @@
-function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, C1, C2, ...
+function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
         alph, beta, xinit, xtrue, niters, varargin)
-% function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, C1, C2, ...
+% function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
 %         alph, beta, mu, Nx, Ny, xinit, xtrue, niters, varargin)
 % 
 % implements tridiag ADMM algo
@@ -8,9 +8,8 @@ function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, C1, C2, ...
 %       y [Ns*Nc 1] undersampled data vector
 %       F (fatrix2) undersampled Fourier encoding matrix
 %       S (fatrix2) sensitivity map diagonal matrix
-%       C1 (fatrix2) horizontal finite differences
-%       C2 (fatrix2) vertical finite differences
-%       alph (scalar, \in [0, 1]) parameter balancing between u3 and x
+%       CH (fatrix2) horizontal finite differences
+%       CV (fatrix2) vertical finite differences
 %       beta (real scalar) spatial regularization parameter
 %       xinit [Nx Ny] initial guess for x
 %       xtrue [Nx Ny] true solution, necessary for NRMSE comparison
@@ -18,6 +17,13 @@ function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, C1, C2, ...
 % varargin:
 %       mu [5 1] AL tuning parameters, default all 1
 %       mask (logical) [Nx Ny] mask for NRMSE calculation
+%       compile_mex recompiles tridiag_inv_mex_noni, default: false
+%       alph (scalar, \in [0, 1]) parameter balancing between u3 and x,
+%               default: 0.5
+%       alphw (scalar, \in [0, 1]) [[orthonormal wavelet case]]
+%               parameter balancing between u0 and u1, default: 0.5
+%       betaw (real scalar) [[orthonormal wavelet case]] 
+%               spatial regularization parameter for wavelets
 % outputs:
 %       x [Nx Ny] reconstructed image
 %       xsaved [Nx Ny niters] estimated image at each iteration
@@ -30,20 +36,23 @@ function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, C1, C2, ...
 
 Nx = size(xinit,1);
 Ny = size(xinit,2);
-
 Nc = S.arg.Nc;
+
 arg.compile_mex = false;
 arg.mask = true(Nx, Ny); 
-arg.mu = ones(1,5);
+arg.mu = ones(1, 5);
+arg.alph = 0.5;
+arg.alphw = 0.5;
+arg.betaw = 0;
 arg = vararg_pair(arg, varargin);
 
 iter = 0;
 x = single(xinit(:));
 y = single(y);
-u0 = C1 * x;
+u0 = CH * x;
 u3 = x;
-u1 = C2 * u3;
-u2 = (1-alph) * S * u3 + alph * S * x;
+u1 = CV * u3;
+u2 = (1-arg.alph) * S * u3 + arg.alph * S * x;
 v3 = zeros(size(u3));
 v4 = -v3;
 eta0 = zeros(size(u0));
@@ -60,13 +69,15 @@ mu4 = arg.mu(5);
 
 [eig_FF,Qbig] = get_eigs(F,Nc);
 SS = S'*S;
-eig_SS = reshape(SS*ones(prod(S.idim),1), Nx, Ny); 
+eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
 
 % pass tridiag of C'C into mex
+Wconst = arg.betaw * arg.alphw / beta;
+WVconst = arg.betaw * (1-arg.alphw) / beta;
 subCCT = single(-mu1 * ones(Ny - 1, Nx));
-diagCCT = single(mu1 * cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)));
+diagCCT = single(mu1 * (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + mu3 + mu1 * WVconst);
 subCC = single(-mu0 * ones(Nx - 1, Ny));
-diagCC = single(mu0 * cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)));
+diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2)+ mu4 + mu0 * Wconst);
 
 % to do: make sure mex compiled
 nthread = int32(jf('ncore'));
@@ -81,24 +92,24 @@ end
 
 time = zeros(niters,1);
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
-cost(1) = calc_cost(beta, C1, C2, F, S, y, x);
+cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
 
 while(iter < niters)
         iter_start = tic;
-        u0 = soft(C1 * double(x) - eta0, beta/mu0);
-        u1 = soft(C2 * double(u3) - eta1, beta/mu1);
-        u2 = u2_update(mu2, alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny);
-        u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, C2, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread);
-        x = x_update(mu0, mu2, mu4, alph, eig_SS, C1, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread);
+        u0 = soft(CH * double(x) - eta0, beta/mu0);
+        u1 = soft(CV * double(u3) - eta1, beta/mu1);
+        u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny);
+        u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread);
+        x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread);
         
         % skip v0, v1, v2 because they are constrained to be zero
         v3 = (mu3 * (-u3 - eta3) + mu4 * (-x + eta4)) ./ (mu3 + mu4);
         v4 = -v3;
         
         % eta updates
-        eta0 = eta0 - (-u0 + C1 * x);
-        eta1 = eta1 - (-u1 + C2 * u3);
-        eta2 = eta2 - (-u2 + (1 - alph) * S * u3 + alph * S * x);
+        eta0 = eta0 - (-u0 + CH * x);
+        eta1 = eta1 - (-u1 + CV * u3);
+        eta2 = eta2 - (-u2 + (1 - arg.alph) * S * u3 + arg.alph * S * x);
         eta3 = eta3 - (-u3 - v3);
         eta4 = eta4 - (x - v4);
         
@@ -110,14 +121,14 @@ while(iter < niters)
                 printf('%d/%d iterations',iter,niters)
         end
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
-        cost(iter + 1) = calc_cost(beta, C1, C2, F, S, y, x);
+        cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
+end
+x = reshape(x, Nx, Ny);
 end
 
-end
-
-function cost = calc_cost(beta, C1, C2, F, S, y, x)
-cost = norm(col(y) - col(F * (S * x)),2)^2/2 + beta * norm(C1 * x,1) + ...
-        beta * norm(C2 * x,1);
+function cost = calc_cost(beta, CH, CV, F, S, y, x)
+cost = norm(col(y) - col(F * (S * x)),2)^2/2 + beta * norm(CH * x,1) + ...
+        beta * norm(CV * x,1);
 end
 
 function out = soft(in,thresh)
@@ -129,9 +140,9 @@ arg_u2 = F' * y + mu2 * ((1-alph) * S * u3 + alph * S * x - eta2);
 u2 = Q' * ((Q * arg_u2) ./ (eig_FF + mu2)) / (Nx * Ny);
 end
 
-function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, C2, S, u1, u2, x, ...
+function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, CV, S, u1, u2, x, ...
         v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread)
-u3arg = mu1 * C2' * (u1 + eta1) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
+u3arg = mu1 * CV' * (u1 + eta1) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
         mu3 * (-v3 - eta3);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
@@ -139,7 +150,7 @@ flipu3arg = reshape(u3arg, Nx, Ny);
 flipu3arg = flipu3arg.';
 flipSS = eig_SS.';
 
-diagvals = diagCCT + mu2 * (1-alph)^2 * flipSS + mu3;
+diagvals = diagCCT + mu2 * (1-alph)^2 * flipSS;
 u3out = tridiag_inv_mex_noni(subCCT, diagvals, subCCT, flipu3arg, nthread);
 
 % transpose solution back
@@ -147,11 +158,11 @@ flipu3 = reshape(u3out, Ny, Nx);
 u3 = col(flipu3.');
 end
 
-function x = x_update(mu0, mu2, mu4, alph, eig_SS, C1, S, u0, u2, u3, v4, ...
+function x = x_update(mu0, mu2, mu4, alph, eig_SS, CH, S, u0, u2, u3, v4, ...
         eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread)
-xarg = mu0 * C1' * (u0 + eta0) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
+xarg = mu0 * CH' * (u0 + eta0) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
         mu4 * (v4 + eta4);
 xarg = reshape(xarg, Nx, Ny);
-diagvals = diagCC + mu2 * alph^2 .* eig_SS + mu4;
+diagvals = diagCC + mu2 * alph^2 .* eig_SS;
 x = tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread);
 end

@@ -33,7 +33,7 @@ Ny = size(xinit,2);
 
 arg.zmethod = 'CG';
 arg.maxv = Inf;
-arg.mu = ones(1,3);
+arg.mu = ones(1, 3);
 arg.mask = true(Nx, Ny);
 arg = vararg_pair(arg, varargin);
 
@@ -149,4 +149,5 @@ switch upper(arg.zmethod)
         otherwise
                 display(sprintf('unknown option for z-update: %s', arg.zmethod));
 end
+x = reshape(x, Nx, Ny);
 end
