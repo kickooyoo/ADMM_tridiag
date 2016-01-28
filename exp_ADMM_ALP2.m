@@ -1,7 +1,7 @@
 % experimental data for tridiag_ADMM
 
 
-truncate = 1;
+truncate = 0;
 
 fn = [home 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
 
@@ -82,6 +82,9 @@ SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3))
 % R = Cdiffs([nx ny],'type_diff','circshift'); %circulant!
 R = [C1; C2];
 
+% mask = generate_mask('slice67',1,Nx,Ny);
+
+
 % choose parameters
 
 tri = 1;
@@ -108,28 +111,46 @@ niters = 5000;
         load([home 'Documents/mai_code/ADMM_tridiag/reviv/tri_chcv_5000iter.mat'],'xhat_tri')
 	if truncate
 		xhat_tri = reshape(xhat_tri, 256, 144);
-		xtri_inf = xhat_tri(3:end-2,3:end-2);
+		x_tri_inf = xhat_tri(3:end-2, 3:end-2);
 	else
         	x_tri_inf = xhat_tri;
 	end
 
 [xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y,F,S,C1,C2,alph,beta,SoS,x_tri_inf,niters,'mu', mu);
 
-%	load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_circ_5000iter.mat'],'xhat_alp2');
-%	x_alp2_inf = xhat_alp2;
-%[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,mu,x_alp2_inf);
+load([home 'Documents/mai_code/ADMM_tridiag/reviv/al_p2_circ_5000iter.mat'],'xhat_alp2');
+	if truncate
+		xhat_alp2c = reshape(xhat_alp2, 256, 144);
+		x_alp2c_inf = xhat_alp2(3:end-2, 3:end-2);
+	else
+	x_alp2c_inf = xhat_alp2;
+end
+[xhat_alp2c, xsaved_alp2c, nrmsd_alp2c, costOrig_alp2c,time_alp2c] = AL_P2_gen(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,x_alp2c_inf,'mu',mu,'zmethod','fft');
 
-load([home 'Documents/mai_code/ADMM_tridiag/reviv/alp2_chcv_5000iter.mat'],'xhat_alp2');	
+load([home 'Documents/mai_code/ADMM_tridiag/reviv/al_p2_chcv_5000iter.mat'],'xhat_alp2');	
 if truncate
 	xhat_alp2 = reshape(xhat_alp2, 256, 144);
 	x_alp2_inf = xhat_alp2(3:end-2, 3:end-2);
 else
 	x_alp2_inf = xhat_alp2;
 end
-[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,R,SoS,niters,beta,mu,nx,ny,x_alp2_inf);
+[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,R,SoS,niters,beta,x_alp2_inf,'mu', mu);
+[xhat_alp2t, xsaved_alp2t, nrmsd_alp2t, costOrig_alp2t,time_alp2t] = AL_P2_gen(y,F,S,R,SoS,niters,beta,x_tri_inf,'mu',mu);
 
+save('./reviv/mpel8_timing_256x144.mat');
+send_mai_text('done with mpel8');
 
 return		
+
+figure; plot(cumsum(time_tri), nrmsd_tri); hold on; 
+%plot(cumsum(time_alp2), nrmsd_alp2(2:end), 'r');  
+plot(cumsum(time_alp2c), nrmsd_alp2c(2:end), 'g'); plot(cumsum(time_alp2t), nrmsd_alp2t(2:end), 'k');
+legend('tridiag-40core','AL-P2 circ (to circ x^*)', 'AL-P2')
+xlabel('wall time (s)')
+title(sprintf('NRMSD to x^* over time for [%d %d]', nx, ny))
+ylabel('NRMSD to x^*');
+axis tight
+
 
 
 	%% 

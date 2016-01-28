@@ -41,6 +41,15 @@ Nc = length(S.arg.Nc);
 
 y = y(:);
 x = xinit(:);
+u = S*x;
+v = R*x;
+z = x;
+u_u = arg.mu(1);
+u_v = arg.mu(2);
+u_z = arg.mu(3);
+eta_u = zeros(size(u));
+eta_v = zeros(size(v));
+eta_z = zeros(size(z));
 
 % soft thresholding function, t is input, a is threshold
 soft = @(t,a) (t - a * sign(t)) .* (abs(t) > a);
@@ -50,27 +59,19 @@ eigvals1 = @(A,Q) Q * A(:,1);
 
 SS = S'*S;
 eigvalsss = SS * ones(Nx * Ny, 1);
-if strcmp(arg.zmethod, 'FFT')
+if strcmp(upper(arg.zmethod), 'FFT')
         RR = R'*R;
         Q = Gdft('mask', true(Nx,Ny));
         eigvalsrr = Q*RR(:,1); 
+	A_CG = [];
+	W_CG = [];
 else
         eigvalsrr = [];
         Q = [];
+	A_CG = [R; Gdiag(ones(Nx*Ny,1),'mask', true(Nx, Ny))];
+        W_CG = Gdiag([u_v * ones(1, prod(R.odim)) u_z * ones(1, Nx*Ny)]);
 end
 [eigvalsaa, Qbig] = get_eigs(A, Nc); 
-
-mask = true(Nx,Ny);%generate_mask('slice67',1,Nx,Ny);
-
-u = S*x;
-v = R*x;
-z = x;
-u_u = mu(1);
-u_v = mu(2);
-u_z = mu(3);
-eta_u = zeros(size(u));
-eta_v = zeros(size(v));
-eta_z = zeros(size(z));
 
 calc_errcost = 1;
 if (calc_errcost)
@@ -91,7 +92,7 @@ for ii=1:niters
         end
         u = u_update(Qbig, A, S, y, x, eta_u, u_u, Nx*Ny, eigvalsaa);
         v = soft(R*z + eta_v, lambda/u_v); 
-        z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
+        z = z_update(Q, A_CG, W_CG, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
         if any(isnan(z)) || any(isinf(z)) || any(abs(z) > arg.maxv)
                 keyboard
         end
@@ -130,17 +131,13 @@ end
 % problematic for non-circulant R
 % z = argmin (u_v R'R + u_z I)^(-1)(u_v R'(v - etav) + u_z (x + etaz))
 % z = argmin u_v/2 ||v - Rz - etav||^2+u_z/2 ||z - x - etaz||^2
-function z = z_update(Q, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg)
-switch arg.zmethod
+function z = z_update(Q, A, W, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg)
+switch upper(arg.zmethod)
         case 'CG'
-                n1 = length(v);
-                n2 = length(x);
-                W = Gdiag([u_v * ones(1, n1) u_z * ones(1, n2)]);
-                A = [Gmatrix(R); Gmatrix(Gdiag(ones(1, n2)))]; % nightmare, pass in
                 y = [v - eta_v; x + eta_z];
                 try
-                        z = qpwls_pcg1(z, A, W, y, Gdiag(zeros(n2, 1)), ...
-                                'niter', 20, 'stop_grad_tol', 1e-11, 'precon', A'*A);
+                        z = qpwls_pcg1(z, A, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
+                                'niter', 10, 'stop_grad_tol', 1e-11, 'precon', A'*A);
                 catch
                         display('qpwls failed');
                         keyboard
@@ -148,8 +145,8 @@ switch arg.zmethod
         case 'FFT'
                 rhs = reshape(u_v * R' * (v - eta_v) + u_z * (x + eta_z), Nx, Ny);
                 invMat = u_v * eigvalsrr + u_z;
-                z = Q' * ((Q * rhs(:)) ./ invMat) / (Nx*Ny);
+                z = Q' * col((Q * rhs(:)) ./ invMat) / (Nx*Ny);
         otherwise
-                display(sprintf('unknown option for z-update: %s', method));
+                display(sprintf('unknown option for z-update: %s', arg.zmethod));
 end
 end
