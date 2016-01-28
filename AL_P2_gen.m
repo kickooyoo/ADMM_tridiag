@@ -39,8 +39,8 @@ arg = vararg_pair(arg, varargin);
 
 Nc = length(S.arg.Nc);
 
-y = y(:);
-x = xinit(:);
+y = single(y(:));
+x = single(xinit(:));
 u = S*x;
 v = R*x;
 z = x;
