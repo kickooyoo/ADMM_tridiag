@@ -35,6 +35,7 @@ arg.zmethod = 'CG';
 arg.maxv = Inf;
 arg.mu = ones(1, 3);
 arg.mask = true(Nx, Ny);
+arg.inner_iter = 1;
 arg = vararg_pair(arg, varargin);
 
 Nc = length(S.arg.Nc);
@@ -137,7 +138,7 @@ switch upper(arg.zmethod)
                 y = [v - eta_v; x + eta_z];
                 try
                         z = qpwls_pcg1(z, A, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
-                                'niter', 10, 'stop_grad_tol', 1e-11, 'precon', A'*A);
+                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-11, 'precon', A'*A);
                 catch
                         display('qpwls failed');
                         keyboard

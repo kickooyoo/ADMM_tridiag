@@ -45,17 +45,10 @@ S = GsplineS(sense_maps, 1);
 F = GsplineF(Nx, Ny, 1, nc, 'samp', samp);
 [CH, CV] = construct_finite_diff(dims); !
 R = [CH; CV];
-if wavelets
-        W = Godwt1(true(Nx, Ny));
-        betaw = beta;
-        alphw = 0.5;
-        Rcirc = Cdiffs([Nx Ny],'type_diff','circshift');
-        RcircW = [Rcirc; W];
-end
 
 % generate data
 y = F*(mapped_im(:));
-% sig = ??
+sig = 10;
 y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 
@@ -73,6 +66,11 @@ alph = 0.5;
 % convergence parameters
 mu = ones(1,5);
 if wavelets
+        W = Godwt1(true(Nx, Ny));
+        betaw = beta;
+        alphw = 0.5;
+        Rcirc = Cdiffs([Nx Ny],'type_diff','circshift');
+        RcircW = [Rcirc; W];
         CHW = [CH; betaw * alphw / beta * W];
         CVW = [CV; betaw * (1-alphw) / beta * W];     
 end
