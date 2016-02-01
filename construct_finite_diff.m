@@ -1,7 +1,8 @@
 function [C1, C2] = construct_finite_diff(dims);
-
+%function [C1, C2] = construct_finite_diff(dims);
+% 
 % assume dims is 1x2 vector
-% what if for dynamic? Then need to add option so don't regularize in 3rd
+% todo: what if for dynamic? Then need to add option so don't regularize in 3rd
 % dim
 
 
@@ -17,12 +18,12 @@ function [C1, C2] = construct_finite_diff(dims);
 %C2test = Gmatrix(C2);
 
 % 
-%C1 = Cdiff(dims, 'offsets',[1],'edge_type','tight');
-%C2 = Cdiff(dims, 'offsets',dims(1),'edge_type','tight');
+C1 = Cdiff(dims, 'offsets', [1], 'edge_type', 'tight');
+C2 = Cdiff(dims, 'offsets', dims(1), 'edge_type', 'tight');
 
-R1 = Reg1(true(dims(1),dims(2)),'offsets',1,'type_diff','mex');
-C1 = R1.C;
+%R1 = Reg1(true(dims(1),dims(2)),'offsets',1,'type_diff','mex');
+%C1 = R1.C;
 
 
-R2 = Reg1(true(dims(1),dims(2)),'offsets',dims(1),'type_diff','mex');
-C2 = R2.C;
+%R2 = Reg1(true(dims(1),dims(2)),'offsets',dims(1),'type_diff','mex');
+%C2 = R2.C;

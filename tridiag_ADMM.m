@@ -40,11 +40,31 @@ Nc = S.arg.Nc;
 
 arg.compile_mex = false;
 arg.mask = true(Nx, Ny); 
-arg.mu = ones(1, 5);
+arg.mu = [];
 arg.alph = 0.5;
 arg.alphw = 0.5;
 arg.betaw = 0;
+arg.debug = false;
+arg.nthread = int32(jf('ncore'));
 arg = vararg_pair(arg, varargin);
+
+% eigvals for SS, get mus
+SS = S'*S;
+eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
+
+if isempty(arg.mu)
+	arg.mu = get_mu(eig_SS(arg.mask(:)), Nx*Ny, beta, 'split', 'ADMM-tridiag');
+end
+
+if length(arg.mu) ~= 5
+	display('wrong size for mu convergence parameters');
+	keyboard;
+end
+
+if ~strcmp(class(arg.nthread), 'int32')
+	display('nthread must be int32');
+	arg.nthread = int32(arg.nthread);
+end
 
 iter = 0;
 x = single(xinit(:));
@@ -68,8 +88,6 @@ mu3 = arg.mu(4);
 mu4 = arg.mu(5);
 
 [eig_FF,Qbig] = get_eigs(F,Nc);
-SS = S'*S;
-eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
 
 % pass tridiag of C'C into mex
 Wconst = arg.betaw * arg.alphw / beta;
@@ -80,7 +98,6 @@ subCC = single(-mu0 * ones(Nx - 1, Ny));
 diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2)+ mu4 + mu0 * Wconst);
 
 % to do: make sure mex compiled
-nthread = int32(jf('ncore'));
 if arg.compile_mex
         curr = cd;
         if ~strcmp(curr(end-11:end), 'ADMM_tridiag')
@@ -99,12 +116,21 @@ while(iter < niters)
         u0 = soft(CH * double(x) - eta0, beta/mu0);
         u1 = soft(CV * double(u3) - eta1, beta/mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny);
-        u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread);
-        x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread);
+        u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
+        x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, arg.nthread);
         
         % skip v0, v1, v2 because they are constrained to be zero
         v3 = (mu3 * (-u3 - eta3) + mu4 * (-x + eta4)) ./ (mu3 + mu4);
         v4 = -v3;
+
+	if arg.debug
+		subplot(2,2,1); im(reshape(abs(x), Nx, Ny));
+		subplot(2,2,2); im(reshape(abs(u2), Nx, Ny, Nc));
+		subplot(2,2,3); im(cat(1, reshape(abs(u0), Nx, Ny), reshape(abs(u1), Nx, Ny)));
+		subplot(2,2,4); im(reshape(abs(u3), Nx, Ny));
+		drawnow;
+		pause(1);
+	end
         
         % eta updates
         eta0 = eta0 - (-u0 + CH * x);
@@ -115,7 +141,7 @@ while(iter < niters)
         
         iter = iter+1;
         time(iter) = toc(iter_start);
-        err(iter) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+        err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
         
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)

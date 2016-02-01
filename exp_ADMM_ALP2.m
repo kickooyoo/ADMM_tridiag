@@ -1,7 +1,7 @@
 % experimental data for tridiag_ADMM
 
 tridiag_exp_setup;
-niters = 2000;
+niters = 1000;
 
 % load xinfs
 %load([home 'Documents/mai_code/ADMM_tridiag/reviv/tri_chcv_5000iter.mat'],'xhat_tri')
@@ -31,48 +31,48 @@ if truncate
 %        x_alp2c_inf = xhat_alp2;
 end
 
-if 0
-[xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(...
-        y_noise, F, S, RcircW, SoS, niters, beta, x_alp2c_inf, 'mu', mu, ...
-        'zmethod', 'fft', 'inner_iter', 3);
+[xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(y_noise, F, S, Rcirc, xinit, niters, beta, x_alp2c_inf, 'zmethod','fft', 'mask', mask);
+[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask);
 
-%[xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t,time_alp2t] = AL_P2_gen(...
-%        y_noise, F, S, RW, SoS, niters, beta, x_tri_inf, 'mu', mu, 'inner_iter', 3);
-[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(...
-        y_noise, F, S, CH, CV, alph, beta, SoS, x_tri_inf, niters,'mu', mu);
-save(sprintf('./reviv/mpel8_timing_%dx%d_%diter.mat', Nx, Ny, niters));
+return;
+[xhat_alp2cG, ~, nrmsd_alp2cG, costOrig_alp2cG, time_alp2cG] = AL_P2_gen(y_noise, F, S, Rcirc, xinit, niters, beta, x_alp2c_inf, 'zmethod','fft', 'mask', mask);
+[xhat_triG, ~, nrmsd_triG, costOrig_triG, time_triG] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask);
+
+if wavelets 
+[xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(...
+        y_noise, F, S, RcircW, SoS, niters, beta, x_alp2c_inf, 'zmethod', 'fft');
+
+[xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t,time_alp2t] = AL_P2_gen(...
+        y_noise, F, S, RW, SoS, niters, beta, x_tri_inf, 'inner_iter', 3);
 end
 
 for ii = 1:10
-        [xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, F, S, R, SoS, niters, beta, x_tri_inf, 'mu', mu,'inner_iter', ii);
-        save(sprintf('./reviv/mpel8_timing_alp2_%dx%d_%dii.mat', Nx, Ny, ii),'xhat_alp2t', 'nrmsd_alp2t', 'time_alp2t', 'ii');
+        [xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, F, S, R, xinit, niters, beta, x_tri_inf,'inner_iter', ii, 'mask', mask);
+        save(sprintf('./reviv/mpel8_timing_alp2_%dx%d_%dii_tunedmu.mat', Nx, Ny, ii),'xhat_alp2t', 'nrmsd_alp2t', 'time_alp2t', 'ii');
 end
 
+%return;
+
+[xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(y_noise, F, S, Rcirc, xinit, niters, beta, x_alp2c_inf, 'zmethod','fft', 'mask', mask);
+[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask);
+[xhat_tri_max, ~, nrmsd_tri_max, costOrig_tri_max, time_tri_max] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')));
+
+
+save(sprintf('./reviv/mpel8_timing_%dx%d_%diter_tunedmu.mat', Nx, Ny, niters));
+send_mai_text('done with retuned mus');
 return;
 
-        [xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(...
-                y_noise, F, S, Rcirc, SoS, niters, beta, x_alp2c_inf, 'mu', mu, 'zmethod','fft');
-[xhat_tri, xsaved_tri, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y,F,S,CH,CV,alph,beta,SoS,x_tri_inf,niters,'mu', mu);
-return;
 
-[xhat_alp2c, xsaved_alp2c, nrmsd_alp2c, costOrig_alp2c,time_alp2c] = AL_P2_gen(y,F,S,Cdiffs([nx ny],'type_diff','circshift'),SoS,niters,beta,x_alp2c_inf,'mu',mu,'zmethod','fft');
-[xhat_alp2, xsaved_alp2, nrmsd_alp2, costOrig_alp2,time_alp2] = AL_P2_gen(y,F,S,R,SoS,niters,beta,x_alp2_inf,'mu', mu);
-[xhat_alp2t, xsaved_alp2t, nrmsd_alp2t, costOrig_alp2t,time_alp2t] = AL_P2_gen(y,F,S,R,SoS,niters,beta,x_tri_inf,'mu',mu);
-
-save(sprintf('./reviv/mpel8_timing_%dx%d.mat', Nx, Ny));
-send_mai_text('done with mpel8');
-
-return
 
 colors = 'cmbrgk';
 figure; hold on; 
 legend_str = {};
 for ii = 1:5%6
-        load(sprintf('./reviv/mpel8_timing_alp2_%dx%d_%dii.mat', 256, 144, ii),'xhat_alp2t', 'nrmsd_alp2t', 'time_alp2t', 'ii');
+        load(sprintf('./reviv/mpel8_timing_alp2_%dx%d_%dii_tuned_mu.mat', 256, 144, ii),'xhat_alp2t', 'nrmsd_alp2t', 'time_alp2t', 'ii');
 	plot(cumsum(time_alp2t), nrmsd_alp2t(2:end), [colors(ii) '--']);	
 	legend_str = [legend_str; sprintf('AL-P2,%d',ii)];
 end
-load('./reviv/mpel8_timing_256x144_2000iter.mat')
+load('./reviv/mpel8_timing_256x144_2000iter_tuned_mu.mat')
 plot(cumsum(time_tri), nrmsd_tri,'k'); hold on; legend_str = [legend_str; 'tridiag,40core'];
 plot(cumsum(time_alp2c), nrmsd_alp2c(2:end), 'g'); legend_str = [legend_str; 'AL-P2 circ (to circ x^*)'];
 legend(legend_str)
