@@ -1,3 +1,4 @@
+% tests out AL_P2_gen and tridiag_ADMM on simulated brainweb data
 
 nx = 240;
 ny = 200;
@@ -63,7 +64,7 @@ xinit = xzfill;%zeros(nx,ny);
 
 % ALP2
 [xhat_P2, xsaved_P2, err_P2, costOrig_P2] = AL_P2_gen(noisey, F, S, [C1; C2],...
-        xinit, niters, beta, mu(1:3), nx, ny, img);
+        xinit, niters, beta, img);
 
 for iter = 1:niters
         dist_to_xinf_P2(iter) = sqrt(sum(abs(col(xsaved_P2(:,:,iter)) - xinf(:)).^2)/(nx*ny));
@@ -71,7 +72,7 @@ end
 
 % tridiag solver
 [xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM(noisey, F, S, C1, C2, ...
-        alph, beta, xinit, img, niters, 'mu', mu(1:5)); % xtrue should be xinf
+        alph, beta, xinit, img, niters); % xtrue should be xinf
 
 for iter = 1:niters
         dist_to_xinf_tri(iter) = sqrt(sum(abs(col(xsaved_tri(:,:,iter)) - xinf(:)).^2)/(nx*ny));

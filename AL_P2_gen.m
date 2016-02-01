@@ -33,12 +33,25 @@ Ny = size(xinit,2);
 
 arg.zmethod = 'CG';
 arg.maxv = Inf;
-arg.mu = ones(1, 3);
+arg.mu = [];
 arg.mask = true(Nx, Ny);
 arg.inner_iter = 1;
+arg.debug = false;
 arg = vararg_pair(arg, varargin);
 
-Nc = length(S.arg.Nc);
+Nc = S.arg.Nc;
+
+% eigvals for SS, get mus
+SS = S'*S;
+eigvalsss = SS * ones(Nx * Ny, 1);
+if isempty(arg.mu)
+	arg.mu = get_mu(eigvalsss(arg.mask(:)), Nx*Ny, lambda, 'split', 'AL-P2');
+end
+
+if length(arg.mu) ~= 3
+	display('wrong size for mu convergence parameters');
+	keyboard;
+end
 
 y = single(y(:));
 x = single(xinit(:));
@@ -54,29 +67,38 @@ eta_z = zeros(size(z));
 
 % soft thresholding function, t is input, a is threshold
 soft = @(t,a) (t - a * sign(t)) .* (abs(t) > a);
-eigvals1 = @(A,Q) Q * A(:,1);
 
 % fatrix objects
-
-SS = S'*S;
-eigvalsss = SS * ones(Nx * Ny, 1);
+RR = R'*R;
+Q = Gdft('mask', true(Nx, Ny));
+e0 = zeros(Nx, Ny);
+e0(1, 1) = 1; %end/2,end/2) = 1;
+eigvalsrr = reshape(Q * RR * e0(:), Nx, Ny); % approximate, for use in precon
 if strcmp(upper(arg.zmethod), 'FFT')
-        RR = R'*R;
-        Q = Gdft('mask', true(Nx,Ny));
-        eigvalsrr = Q*RR(:,1); 
 	A_CG = [];
 	W_CG = [];
+	P_CG = [];
 else
-        RR = R'*R;
-        Q = Gdft('mask', true(Nx,Ny));
-        eigvalsrr_precon = Q*RR(:,1); 
+	Qn = (1/sqrt(Nx * Ny)) * Gdft('mask', true(Nx, Ny));
 	A_CG = [R; Gdiag(ones(Nx*Ny,1),'mask', true(Nx, Ny))];
-        W_CG = Gdiag([u_v * ones(1, prod(R.odim)) u_z * ones(1, Nx*Ny)]);
+	if isfield(R.arg, 'dim')
+		Rodim = R.dim(1);
+	elseif isfield(R, 'odim')
+		Rodim = prod(R.odim);
+	else
+		display('can not figure out odim of R');
+		keyboard;
+	end
+        W_CG = Gdiag([u_v * ones(1, Rodim) u_z * ones(1, Nx*Ny)]);
+	%P_CG = Qn * (Gdiag((eigvalsrr + 1)) * Qn');
+	P_CG = qpwls_precon('circ0', {A_CG, W_CG}, Gdiag(zeros(Nx*Ny,1)), true(Nx, Ny)); 
+	% P = Q D Q'
+	% P H e0 ~~ e0
+	%P_CG = Gdiag(sqrt((eigvalsrr + 1) )) * Q;
+	%tmp = P_CG*(A_CG'*A_CG*e0(:));
+	%norm(e0(:) - tmp)
+	%keyboard
 end
-
-
-display('precon test time')
-keyboard
 
 [eigvalsaa, Qbig] = get_eigs(A, Nc); 
 
@@ -91,7 +113,7 @@ end
 xsave = zeros(Nx, Ny, niters);
 time = zeros(niters,1);
 
-for ii=1:niters
+for ii = 1:niters
         iter_start = tic;
         x = x_update(S, u, z, eta_u, eta_z, u_u, u_z, eigvalsss);
         if any(isnan(x)) || any(isinf(x)) || any(abs(x) > arg.maxv)
@@ -99,10 +121,19 @@ for ii=1:niters
         end
         u = u_update(Qbig, A, S, y, x, eta_u, u_u, Nx*Ny, eigvalsaa);
         v = soft(R*z + eta_v, lambda/u_v); 
-        z = z_update(Q, A_CG, W_CG, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
+        z = z_update(Q, A_CG, W_CG, P_CG, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
         if any(isnan(z)) || any(isinf(z)) || any(abs(z) > arg.maxv)
                 keyboard
         end
+	if arg.debug
+		subplot(2,2,1); im(reshape(abs(x), Nx, Ny));
+		subplot(2,2,2); im(reshape(abs(u), Nx, Ny, Nc));
+		subplot(2,2,3); im(reshape(abs(v), Nx, Ny, 2));
+		subplot(2,2,4); im(reshape(abs(z), Nx, Ny));
+		drawnow;
+		pause(1);
+	end
+
         eta_u = eta_u - (u - S*x);
         eta_v = eta_v - (v - R*z);
         eta_z = eta_z - (z - x);
@@ -116,6 +147,7 @@ for ii=1:niters
         end
         xsave(:,:,ii) = reshape(x, Nx, Ny);
 end
+x = reshape(x, Nx, Ny);
 if (~calc_errcost)
         err = zeros(niters+1, 1);
         costOrig = zeros(niters+1, 1);
@@ -137,14 +169,14 @@ end
 % z-update
 % problematic for non-circulant R
 % z = argmin (u_v R'R + u_z I)^(-1)(u_v R'(v - etav) + u_z (x + etaz))
-% z = argmin u_v/2 ||v - Rz - etav||^2+u_z/2 ||z - x - etaz||^2
-function z = z_update(Q, A, W, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg)
+% z = argmin u_v/2 ||v - Rz - etav||^2 + u_z/2 ||z - x - etaz||^2
+function z = z_update(Q, A, W, P, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg)
 switch upper(arg.zmethod)
         case 'CG'
                 y = [v - eta_v; x + eta_z];
                 try
                         z = qpwls_pcg1(z, A, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
-                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', Q'*Q);
+                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', P);
                 catch
                         display('qpwls failed');
                         keyboard
@@ -152,9 +184,8 @@ switch upper(arg.zmethod)
         case 'FFT'
                 rhs = reshape(u_v * R' * (v - eta_v) + u_z * (x + eta_z), Nx, Ny);
                 invMat = u_v * eigvalsrr + u_z;
-                z = Q' * col((Q * rhs(:)) ./ invMat) / (Nx*Ny);
+                z = Q' * col((Q * rhs(:)) ./ col(invMat)) / (Nx*Ny);
         otherwise
                 display(sprintf('unknown option for z-update: %s', arg.zmethod));
 end
-x = reshape(x, Nx, Ny);
 end
