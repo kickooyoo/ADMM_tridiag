@@ -67,11 +67,17 @@ if strcmp(upper(arg.zmethod), 'FFT')
 	A_CG = [];
 	W_CG = [];
 else
-        eigvalsrr = [];
-        Q = [];
+        RR = R'*R;
+        Q = Gdft('mask', true(Nx,Ny));
+        eigvalsrr_precon = Q*RR(:,1); 
 	A_CG = [R; Gdiag(ones(Nx*Ny,1),'mask', true(Nx, Ny))];
         W_CG = Gdiag([u_v * ones(1, prod(R.odim)) u_z * ones(1, Nx*Ny)]);
 end
+
+
+display('precon test time')
+keyboard
+
 [eigvalsaa, Qbig] = get_eigs(A, Nc); 
 
 calc_errcost = 1;
@@ -138,7 +144,7 @@ switch upper(arg.zmethod)
                 y = [v - eta_v; x + eta_z];
                 try
                         z = qpwls_pcg1(z, A, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
-                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-11, 'precon', A'*A);
+                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', Q'*Q);
                 catch
                         display('qpwls failed');
                         keyboard

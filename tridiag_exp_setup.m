@@ -48,7 +48,9 @@ R = [CH; CV];
 
 % generate data
 y = F*(mapped_im(:));
-sig = 10;
+SNR = 40;
+sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
+rng(0)
 y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 
@@ -60,7 +62,7 @@ SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3))
 % mask = generate_mask('slice67',1,Nx,Ny);
 
 % parameters
-beta = 2^20.1;
+beta = 2^19;
 % tradeoff between S and x, between [0 1]
 alph = 0.5;
 % convergence parameters
