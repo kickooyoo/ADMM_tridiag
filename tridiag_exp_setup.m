@@ -65,6 +65,9 @@ SoS = sqrt(sum(abs(zero_fill).^2,3));
 %SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3));
 
 mask = generate_mask('slice67',1,Nx,Ny);
+if truncate
+	mask = mask(3:end-2,3:end-2);
+end
 
 % parameters
 beta = 2^19;

@@ -2,6 +2,7 @@ function F = F_par(Nx, Ny, Nc)
 %function F = F_par(Nx, Ny, Nc)
 %
 %  parallelized fully sampled FFTs over Nc coils 
+% abandoned because slower than GsplineF for 8 coils
 
 arg.Nx = Nx;
 arg.Ny = Ny;

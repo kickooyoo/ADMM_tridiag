@@ -37,15 +37,22 @@ arg.mu = [];
 arg.mask = true(Nx, Ny);
 arg.inner_iter = 1;
 arg.debug = false;
+arg.precon = true;
 arg = vararg_pair(arg, varargin);
 
 Nc = S.arg.Nc;
 
+tic;
 % eigvals for SS, get mus
 SS = S'*S;
 eigvalsss = SS * ones(Nx * Ny, 1);
+RR = R'*R;
+Q = Gdft('mask', true(Nx, Ny));
+e0 = zeros(Nx, Ny);
+e0(1, 1) = 1; %end/2,end/2) = 1;
+eigvalsrr = reshape(Q * RR * e0(:), Nx, Ny); % approximate, for use in precon
 if isempty(arg.mu)
-	arg.mu = get_mu(eigvalsss(arg.mask(:)), Nx*Ny, lambda, 'split', 'AL-P2');
+	arg.mu = get_mu(eigvalsss(arg.mask(:)), eigvalsrr, Nx*Ny, lambda, 'split', 'AL-P2');
 end
 
 if length(arg.mu) ~= 3
@@ -68,12 +75,6 @@ eta_z = zeros(size(z));
 % soft thresholding function, t is input, a is threshold
 soft = @(t,a) (t - a * sign(t)) .* (abs(t) > a);
 
-% fatrix objects
-RR = R'*R;
-Q = Gdft('mask', true(Nx, Ny));
-e0 = zeros(Nx, Ny);
-e0(1, 1) = 1; %end/2,end/2) = 1;
-eigvalsrr = reshape(Q * RR * e0(:), Nx, Ny); % approximate, for use in precon
 if strcmp(upper(arg.zmethod), 'FFT')
 	A_CG = [];
 	W_CG = [];
@@ -91,7 +92,11 @@ else
 	end
         W_CG = Gdiag([u_v * ones(1, Rodim) u_z * ones(1, Nx*Ny)]);
 	%P_CG = Qn * (Gdiag((eigvalsrr + 1)) * Qn');
-	P_CG = qpwls_precon('circ0', {A_CG, W_CG}, Gdiag(zeros(Nx*Ny,1)), true(Nx, Ny)); 
+	if arg.precon
+		P_CG = qpwls_precon('circ0', {A_CG, W_CG}, Gdiag(zeros(Nx*Ny,1)), true(Nx, Ny)); 
+	else
+		P_CG = 1;
+	end
 	% P = Q D Q'
 	% P H e0 ~~ e0
 	%P_CG = Gdiag(sqrt((eigvalsrr + 1) )) * Q;
@@ -111,8 +116,7 @@ if (calc_errcost)
 end
 
 xsave = zeros(Nx, Ny, niters);
-time = zeros(niters,1);
-
+time(1) = toc;
 for ii = 1:niters
         iter_start = tic;
         x = x_update(S, u, z, eta_u, eta_z, u_u, u_z, eigvalsss);
@@ -137,7 +141,7 @@ for ii = 1:niters
         eta_u = eta_u - (u - S*x);
         eta_v = eta_v - (v - R*z);
         eta_z = eta_z - (z - x);
-        time(ii) = toc(iter_start);
+        time = [time toc(iter_start)];
         if (calc_errcost)
                 err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
                 costOrig = [costOrig calc_orig_cost(y, A, S, R, x, lambda)];

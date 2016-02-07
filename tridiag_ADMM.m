@@ -48,12 +48,13 @@ arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg = vararg_pair(arg, varargin);
 
+tic
 % eigvals for SS, get mus
 SS = S'*S;
 eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
 
 if isempty(arg.mu)
-	arg.mu = get_mu(eig_SS(arg.mask(:)), Nx*Ny, beta, 'split', 'ADMM-tridiag');
+	arg.mu = get_mu(eig_SS(arg.mask(:)), [], Nx*Ny, beta, 'split', 'ADMM-tridiag');
 end
 
 if length(arg.mu) ~= 5
@@ -107,10 +108,9 @@ if arg.compile_mex
         mex -O CFLAGS="\$CFLAGS -std=c99 -DMmex" -I./pthread_tutor/def/ ./pthread_tutor/tridiag_inv_mex_noni.c
 end
 
-time = zeros(niters,1);
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
-
+time(1) = toc;
 while(iter < niters)
         iter_start = tic;
         u0 = soft(CH * double(x) - eta0, beta/mu0);
@@ -139,8 +139,8 @@ while(iter < niters)
         eta3 = eta3 - (-u3 - v3);
         eta4 = eta4 - (x - v4);
         
+        time = [time toc(iter_start)];
         iter = iter+1;
-        time(iter) = toc(iter_start);
         err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
         
         if mod(iter,10) == 0
