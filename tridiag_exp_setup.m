@@ -17,6 +17,7 @@ if ~isvar('mapped_im')
 	% slice selection
 	% sathish used 38, Muckley and Dan complained, so switch to 67
 	slice = 67;
+	slice = 38;
 	mapped_im = squeeze(im4d(:,:,slice,:));
 	Nx = size(im4d,1);
 	Ny = size(im4d,2);
@@ -24,7 +25,7 @@ if ~isvar('mapped_im')
 
 	% need to estimate sense maps for other slices
 	% for slice 67
-	load([home 'Documents/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_67.mat']);
+	load(sprintf('%sDocuments/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_%d.mat', home, slice));
 	if truncate
 		sense_maps = S_est(3:end-2,3:end-2,:);
 	else
@@ -35,13 +36,34 @@ end
 
 if ~isvar('samp')
 	% generate sampling pattern
-	reduction = 6;
-	params.Nx = Nx;
-	params.Ny = Ny;
-	params.Nf = 1;
-	params.h = 1;
-	params.R = round(Nx*Ny/reduction);
-	samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0));
+	if 0
+		reduction = 6;
+		params.Nx = Nx;
+		params.Ny = Ny;
+		params.Nf = 1;
+		params.h = 1;
+		params.R = round(Nx*Ny/reduction);
+		samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0));
+	else
+		load('al-p2/PDiskR256x256L1R2.252.25B0.8R1D1pctg20.2972.mat', 'SP', 'sampname');
+		if size(SP, 1) > Nx
+			SP = SP(1:Nx,:);
+		elseif size(SP, 1) < Nx
+			display('need bigger Poisson disk sampling pattern');
+			keyboard;
+		end
+		if size(SP, 2) > Ny
+			SP = SP(:,1:Ny);
+		elseif size(SP, 2) < Ny
+			display('need bigger Poisson disk sampling pattern');
+			keyboard;
+		end
+		Ncentx = 8; % sample a window of 2*N around DC along x
+		Ncenty = 8; % sample a window of 2*N around DC along y
+
+		samp = logical(coverDC_SamplingMask(SP, Ncentx, Ncenty));
+
+	end
 end
 
 % construct fatrices
@@ -54,7 +76,7 @@ R = [CH; CV];
 y = F*(mapped_im(:));
 SNR = 40;
 sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
-rng(0)
+rng(0, 'twister')
 y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 

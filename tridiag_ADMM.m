@@ -46,6 +46,7 @@ arg.alphw = 0.5;
 arg.betaw = 0;
 arg.debug = false;
 arg.nthread = int32(jf('ncore'));
+arg.timing = 'all'; % 'tridiag'
 arg = vararg_pair(arg, varargin);
 
 tic
@@ -67,7 +68,7 @@ if ~strcmp(class(arg.nthread), 'int32')
 	arg.nthread = int32(arg.nthread);
 end
 
-iter = 0;
+%iter = 0;
 x = single(xinit(:));
 y = single(y);
 u0 = CH * x;
@@ -111,14 +112,18 @@ end
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
 time(1) = toc;
-while(iter < niters)
+tridiag_time(1) = 0;
+%while(iter < niters)
+for iter = 1:niters
         iter_start = tic;
         u0 = soft(CH * double(x) - eta0, beta/mu0);
         u1 = soft(CV * double(u3) - eta1, beta/mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny);
+	tridiag_tic = tic;
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
         x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, arg.nthread);
-        
+        tridiag_time(iter + 1) = toc(tridiag_tic);
+
         % skip v0, v1, v2 because they are constrained to be zero
         v3 = (mu3 * (-u3 - eta3) + mu4 * (-x + eta4)) ./ (mu3 + mu4);
         v4 = -v3;
@@ -139,10 +144,12 @@ while(iter < niters)
         eta3 = eta3 - (-u3 - v3);
         eta4 = eta4 - (x - v4);
         
-        time = [time toc(iter_start)];
-        iter = iter+1;
-        err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
-        
+        %time = [time toc(iter_start)];
+        %iter = iter+1;
+        %err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
+        time(iter + 1) = toc(iter_start);
+	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)
         end
@@ -150,6 +157,9 @@ while(iter < niters)
         cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
 end
 x = reshape(x, Nx, Ny);
+if strcmp(arg.timing, 'tridiag')
+	time = tridiag_time;
+end
 end
 
 function cost = calc_cost(beta, CH, CV, F, S, y, x)
@@ -190,5 +200,5 @@ xarg = mu0 * CH' * (u0 + eta0) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta
         mu4 * (v4 + eta4);
 xarg = reshape(xarg, Nx, Ny);
 diagvals = diagCC + mu2 * alph^2 .* eig_SS;
-x = tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread);
+x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
 end

@@ -1,5 +1,5 @@
 % generate xinf for tridiag experiment
-
+if 0
 tridiag_exp_setup;
 
 niters = 5000;
@@ -28,3 +28,15 @@ x_alp2cw_inf = xhat_alp2w;
 send_mai_text('check xhat');
 keyboard;
 save(sprintf('./reviv/x_alp2cw_inf_slice%d_beta%.*d.mat', slice, 3, beta),'x_alp2cw_inf');
+
+else 
+	tridiag_exp_setup;
+	%MFISTA
+	xMFIS = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, beta, niters);
+
+	save(sprintf('./reviv/x_MFISTA_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'xMFIS');
+end
+
+
+%% notes on MFISTA changes
+% line 38 of compute_Cost_CT2D
