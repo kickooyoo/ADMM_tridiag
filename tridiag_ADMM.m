@@ -163,8 +163,8 @@ end
 end
 
 function cost = calc_cost(beta, CH, CV, F, S, y, x)
-cost = norm(col(y) - col(F * (S * x)),2)^2/2 + beta * norm(CH * x,1) + ...
-        beta * norm(CV * x,1);
+cost = norm(col(y) - col(F * (S * x)),2)^2/2 + beta * norm(col(CH * x),1) + ...
+        beta * norm(col(CV * x),1);
 end
 
 function out = soft(in,thresh)

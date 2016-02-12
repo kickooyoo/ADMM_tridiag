@@ -38,6 +38,7 @@ arg.mask = true(Nx, Ny);
 arg.inner_iter = 1;
 arg.debug = false;
 arg.precon = true;
+arg.save_x = false;
 arg = vararg_pair(arg, varargin);
 
 Nc = S.arg.Nc;
@@ -109,13 +110,17 @@ end
 
 calc_errcost = 1;
 if (calc_errcost)
-        calc_orig_cost = @(y, A, S, R, x, lambda) norm(y - A*(S*x),2)^2/2 + ...
-                lambda*norm(R*x,1);
+        calc_orig_cost = @(y, A, S, R, x, lambda) norm(col(y - A*(S*x)),2)^2/2 + ...
+                lambda*norm(col(R*x),1);
         err = calc_NRMSE_over_mask(x, xtrue, arg.mask);
         costOrig = calc_orig_cost(y, A, S, R, x, lambda);
 end
 
-xsave = zeros(Nx, Ny, niters);
+if arg.save_x
+	xsave = zeros(Nx, Ny, niters);
+else
+	xsave = 0;
+end
 time(1) = toc;
 for ii = 1:niters
         iter_start = tic;
@@ -149,7 +154,9 @@ for ii = 1:niters
         if mod(ii,10) == 0
                 printf('%d/%d iterations',ii,niters)
         end
-        xsave(:,:,ii) = reshape(x, Nx, Ny);
+   	if arg.save_x
+	   	xsave(:,:,ii) = reshape(x, Nx, Ny);
+	end
 end
 x = reshape(x, Nx, Ny);
 if (~calc_errcost)

@@ -3,11 +3,11 @@ truncate = 0;
 wavelets = 0;
 
 if ~isvar('mapped_im')
-	fn = [home 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
+	fn = [home_path 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
 
 	nc = 8;
 	[im4d,d] = recon3dft(fn,nc);
-	[body_coil_images,d] = recon3dft([home 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
+	[body_coil_images,d] = recon3dft([home_path 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
 
 	% here we clip the images to see affect of factors of 2 on the FFT
 	if truncate
@@ -24,8 +24,8 @@ if ~isvar('mapped_im')
 	dims = [Nx Ny];
 
 	% need to estimate sense maps for other slices
-	% for slice 67
-	load(sprintf('%sDocuments/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_%d.mat', home, slice));
+	%load(sprintf('%sDocuments/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_%d.mat', home_path, slice));
+	load(sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice), 'Smap_QPWLS'); S_est = Smap_QPWLS;
 	if truncate
 		sense_maps = S_est(3:end-2,3:end-2,:);
 	else
@@ -36,14 +36,19 @@ end
 
 if ~isvar('samp')
 	% generate sampling pattern
-	if 0
-		reduction = 6;
-		params.Nx = Nx;
-		params.Ny = Ny;
-		params.Nf = 1;
-		params.h = 1;
-		params.R = round(Nx*Ny/reduction);
-		samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0));
+	if 1
+		if exist('PD_sampling_256x144_R6_center8.mat')
+			load('PD_sampling_256x144_R6_center8.mat','samp');
+		else
+			reduction = 6;
+			params.Nx = Nx;
+			params.Ny = Ny;
+			params.Nf = 1;
+			params.h = 1;
+			params.R = round(Nx*Ny/reduction);
+			samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0, 'ellipse', 0, 'ncenter', 8, 'vardensity', 0));
+			save('PD_sampling_256x144_R6_center8.mat','samp');
+		end
 	else
 		load('al-p2/PDiskR256x256L1R2.252.25B0.8R1D1pctg20.2972.mat', 'SP', 'sampname');
 		if size(SP, 1) > Nx
@@ -86,13 +91,26 @@ SoS = sqrt(sum(abs(zero_fill).^2,3));
 [xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
 %SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3));
 
+if slice == 67
 mask = generate_mask('slice67',1,Nx,Ny);
 if truncate
 	mask = mask(3:end-2,3:end-2);
 end
+else
+	mask = true(Nx, Ny);
+end
 
 % parameters
-beta = 2^19;
+if slice == 67
+	beta = 2^19;
+elseif slice == 38
+	beta = 2^24; % for slice 38 and l2b = 12 samp
+	beta = 2^28; % for slice 38 and l2b = 16 samp
+	beta = 2^25; % for slice 38 and sathish samp and sathish samp
+	beta = 2^23; % for slice 38 and new samp R=6, sathish smap
+else
+	keyboard;
+end
 % tradeoff between S and x, between [0 1]
 alph = 0.5;
 % convergence parameters

@@ -1,5 +1,5 @@
-function xMFIS = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
-%function xMFIS = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
+function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
+%function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
 % 
 % wrapper for MFISTA for getting x_inf for tridiagonal ADMM
 
@@ -26,7 +26,7 @@ function xMFIS = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
 	
 	params.figno = 2;
 	params.doMFISTA = 1;
-	params.maxitr = niter; % Max # of outer iterations
+	params.maxitr = niter; 
 	params.R = R;
 
 	data = y; 
@@ -36,7 +36,7 @@ function xMFIS = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
 	params.A = A;
 	params.AWy = AWy;
 	params.W = ones(size(y));
-	params.Operator = 'FD';
+	params.Operator = 'AFD';
 	params.PriorType = 'l1';
 	params.rw = ones(Nx, Ny);%, 2);
 	params.lambda = lambda;

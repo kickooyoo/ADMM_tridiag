@@ -13,7 +13,8 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/Documents/mai_code/pthread_tutor'))
         addpath(genpath('~/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/Documents/contrib/ramani_MFISTA');
-	home = '~/';
+	home_path = '~/';
+	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
     case 'mpel8.eecs.umich.edu'
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
@@ -23,7 +24,8 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/iv1h//Documents/mai_code/pthread_tutor'))
         addpath(genpath('~/iv1h//Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
-	home = '~/iv1h/';
+	home_path = '~/iv1h/';
+	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
     case 'ir63.eecs.umich.edu'
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
@@ -32,7 +34,8 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/iv1h/Documents/mai_code/pthread_tutor'))
         addpath(genpath('~/iv1h/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
-	home = '~/iv1h/';
+	home_path = '~/iv1h/';
+	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
     case 'vega'
         addpath('/Users/mai/Documents/irt')
 	addpath('/Users/mai/Documents/irt/irt/contrib/ramani/al-p2');
@@ -44,7 +47,8 @@ switch machine(1:end-1) % last char is some sort of new line
 	addpath('/Users/mai/Documents/irt/reproduce/ramani-12-asb/2011-12-19');
 	display('make sure ramani_MFISTA/ copied over to vega')
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
-	home = '/Users/mai/';
+	home_path = '/Users/mai/';
+	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
     otherwise
         display('unknown machine');
 end
