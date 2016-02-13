@@ -92,10 +92,12 @@ SoS = sqrt(sum(abs(zero_fill).^2,3));
 %SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3));
 
 if slice == 67
-mask = generate_mask('slice67',1,Nx,Ny);
-if truncate
-	mask = mask(3:end-2,3:end-2);
-end
+	mask = generate_mask('slice67',1,Nx,Ny);
+	if truncate
+		mask = mask(3:end-2,3:end-2);
+	end
+elseif slice == 38
+	mask = generate_mask('slice38',1,Nx,Ny);
 else
 	mask = true(Nx, Ny);
 end
@@ -107,7 +109,7 @@ elseif slice == 38
 	beta = 2^24; % for slice 38 and l2b = 12 samp
 	beta = 2^28; % for slice 38 and l2b = 16 samp
 	beta = 2^25; % for slice 38 and sathish samp and sathish samp
-	beta = 2^23; % for slice 38 and new samp R=6, sathish smap
+	beta = 2^20; % for slice 38 and new samp R=6, sathish smap
 else
 	keyboard;
 end

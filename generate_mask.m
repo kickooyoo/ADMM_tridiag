@@ -43,7 +43,7 @@ function mask = gen_slice38_mask(loose,nx,ny)
     ny = 144;
     fov = 25;
     ig = image_geom( 'nx', nx, 'ny', ny, 'fov', 25 );
-    mask = logical(ig.circ( loose*fov/2.5, loose*fov/4, -4/fov, 2/fov));
+    mask = logical(ig.circ( loose*fov/2.3, loose*fov/4, -4/fov, 2/fov));
 end
 
 % to do: let crop to nx x ny
