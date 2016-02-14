@@ -10,8 +10,17 @@ if isvar('xMFIS')
 end
 x_tri_inf = x_MFISTA;
 
+load(sprintf('./reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
+
 [xhat_trit, ~, nrmsd_trit, costOrig_trit, time_trit] = tridiag_ADMM(y_noise, ...
         F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask);
+[xhat_trit2, ~, nrmsd_trit2, costOrig_trit2, time_trit2] = tridiag_ADMM(y_noise, ...
+        F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu', 1);
+
+[xhat_triat2, ~, nrmsd_triat2, costOrig_triat2, time_triat2] = tridiag_ADMM(y_noise, ...
+        F, S, CH, CV, 0, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu', 1);
+figure; plot(nrmsd_trit); hold on; plot(nrmsd_trit2,'r'); hold on; plot(nrmsd_triat2,'k')
+
 [xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, ...
         F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'mu', ones(1,5));
 
@@ -31,7 +40,7 @@ figure; plot(cumsum(time_trit), nrmsd_trit);
 hold on; plot(cumsum(time_alp2t), nrmsd_alp2t,'r')
 
 %%
-
+return
 slice = 38;
 load(sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice), 'Smap_QPWLS');
 SS = sos_combine(permute(Smap_QPWLS, [1 2 4 3]));

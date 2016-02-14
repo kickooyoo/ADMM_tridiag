@@ -1,4 +1,4 @@
-function mu = get_mu(SS, RR, Nr, lambda, varargin)
+function [mu, mu3, mu4] = get_mu(SS, RR, Nr, lambda, varargin)
 %function mu = get_mu(eigvalss)
 % set mu for nice condition numbers, based on AL-P2 splits
 
@@ -10,10 +10,11 @@ arg.noise = 9300; % pixel diff for noise
 arg.split = 'AL-P2'; % 'ADMM-tridiag'
 arg.author = 'ramani';
 arg.alph = 0.5; % tridiag design param
+arg.mask = true(size(SS));
 arg = vararg_pair(arg, varargin);
 
-SSmax = max(col(abs(SS)));
-SSmin = min(col(abs(SS)));
+SSmax = max(col(abs(SS(arg.mask(:)))));
+SSmin = min(col(abs(SS(arg.mask(:)))));
 if isempty(RR)
         display('what to do for noncirc tridiag?');
         RRmax = 4;
@@ -22,6 +23,9 @@ else
         RRmax = max(col(abs(RR)));
         RRmin = min(col(abs(RR)));
 end
+
+mu3 = [];
+mu4 = [];
 
 switch arg.author
         case 'mai'
@@ -91,8 +95,21 @@ switch arg.author
                                 mu_1 = mu_0;
                                 mu_3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SSaprox);
                                 mu_4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SSaprox);
+                                
+                                if ndims_ns(SS) ~= 2
+%                                         SS = reshape(
+                                        keyboard
+                                end
+                                mu3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SS);
+                                mu4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SS);
 
                                 mu = [mu_0 mu_1 mu_2 mu_3 mu_4];
+                                
+                                if any(mu < 0) || any(col(mu3) < 0) || any(col(mu_4) < 0)
+                                        display('invalid negative mu');
+                                        keyboard;
+                                end
+                                
                         otherwise
                                 display(sprintf('unknown splitting scheme %s', arg.split));
                                 keyboard
