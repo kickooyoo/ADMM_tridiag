@@ -19,6 +19,7 @@ function [x, xsave, err, costOrig, time] = AL_P2_gen(y, A, S, R, ...
 %       zmethod (string) 'CG' for non circulant R or 'FFT' for circulant R
 %       maxv (real scalar) debugging, stops program if diverges (i.e. any
 %               values in x > maxv
+%       inner iter (int) inner CG steps for z-update
 % outputs:
 %       x [Nx Ny] reconstructed image
 %       xsave [Nx Ny niters] estimated image at each iteration

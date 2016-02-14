@@ -22,7 +22,7 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 	params.formatstringO = '%0.2E';
 
 	params.ig.mask = true(Nx, Ny);
-	params.img = zeros(Nx, Ny);
+	params.img = zeros(Nx, Ny); % true image unknown
 	
 	params.figno = 2;
 	params.doMFISTA = 1;
@@ -38,8 +38,8 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 	params.W = ones(size(y));
 	params.Operator = 'AFD';
 	params.PriorType = 'l1';
-	params.rw = ones(Nx, Ny);%, 2);
-	params.lambda = lambda;
+	params.rw = ones(Nx, Ny);
+	params.lambda = lambda; % careful, this is actually 2lambda compared to typical
 	params.MFISTA.nCG = 5;
 
 	params.N = [Nx Ny];
@@ -54,11 +54,11 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 		save('mEAWA_MFISTA.mat','mEAWA');
 	end
 	params.mEAWA = mEAWA;
-	params.xinf = zeros(Nx,Ny); % to be populated when x_infinity ( minimizer of the cost ) is available
+	params.xinf = zeros(Nx,Ny); 
 	params.xinfnorm = 1;
 	
 	[xMFIS CMFIS TFIS l2DFIS RMSEFIS] = runMFISTA(data, AWy, xini, params);
 	if norm(xMFIS - xini) == 0
-		display('MFISTA did nothing');
+		display('problem: MFISTA did nothing, check mEAWA and dgrad sign');
 		keyboard;
 	end

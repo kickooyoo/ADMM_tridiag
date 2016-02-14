@@ -1,7 +1,7 @@
 % experimental data for tridiag_ADMM
 
 tridiag_exp_setup;
-niters = 35000;
+niters = 350;
 
 % load xinfs
 %load([home 'Documents/mai_code/ADMM_tridiag/reviv/tri_chcv_5000iter.mat'],'xhat_tri')

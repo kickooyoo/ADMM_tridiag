@@ -78,7 +78,7 @@ F = GsplineF(Nx, Ny, 1, nc, 'samp', samp);
 R = [CH; CV];
 
 % generate data
-y = F*(mapped_im(:));
+y = F * mapped_im(:);
 SNR = 40;
 sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
 rng(0, 'twister')
@@ -86,10 +86,23 @@ y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 
 % initialize with SoS zero-fill solution
-zero_fill = reshape(F'*y,Nx,Ny,nc)/(Nx*Ny);
+center_samp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
+F_center = GsplineF(Nx, Ny, 1, nc, 'samp', center_samp);
+y_center = F_center * mapped_im(:);
+y_center_noise = y_center + sig*randn(size(y_center)) + 1i*sig*randn(size(y_center));
+zero_fill = reshape(F_center'*y_center_noise, Nx, Ny, nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
-[xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
+% [xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
 %SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3));
+xinit = SoS;
+if 0
+        [xinit, scale] = ir_wls_init_scale(A, y_center_noise, SoS);
+        [xinit_MFIS, scale_MFIS] = ir_wls_init_scale(A, y_center_noise, xMFIS);
+        figure; im(cat(1, cat(2, SoS, xinit), cat(2, xMFIS, xinit_MFIS)))
+        title(sprintf('SoS scale: %.2d + %.2di, MFISTA scale: %.2d + %.2di',real(scale),imag(scale),real(scale_MFIS),imag(scale_MFIS)))
+        [~, testscale] = ir_wls_init_scale(1, xMFIS, SoS)
+        % testscale = 0.1600 - 0.4581i
+end
 
 if slice == 67
 	mask = generate_mask('slice67',1,Nx,Ny);

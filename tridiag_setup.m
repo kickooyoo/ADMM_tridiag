@@ -38,15 +38,15 @@ switch machine(1:end-1) % last char is some sort of new line
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
     case 'vega'
         addpath('/Users/mai/Documents/irt')
-	addpath('/Users/mai/Documents/irt/irt/contrib/ramani/al-p2');
+	addpath('/Users/mai/Documents/irt/contrib/ramani/al-p2');
         addpath(genpath('/Users/mai/Documents/mai_code'))
         addpath(genpath('/Users/mai/Documents/mai_code/ADMM_tridiag'))
         addpath(genpath('/Users/mai/Documents/contrib'))
         addpath(genpath('/Users/mai/Documents/mai_code/util'))
         addpath(genpath('/Users/mai/Documents/mai_code/spline_basis'))
+        addpath(genpath('/Users/mai/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('/Users/mai/Documents/irt/reproduce/ramani-12-asb/2011-12-19');
-	display('make sure ramani_MFISTA/ copied over to vega')
-	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
+	addpath('/Users/mai/Documents/contrib/ramani_MFISTA');
 	home_path = '/Users/mai/';
 	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
     otherwise
