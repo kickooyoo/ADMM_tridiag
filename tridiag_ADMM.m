@@ -47,7 +47,7 @@ arg.betaw = 0;
 arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
-arg.fancy_mu = false;
+arg.fancy_mu34 = false;
 arg = vararg_pair(arg, varargin);
 
 tic
@@ -56,8 +56,9 @@ SS = S'*S;
 eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
 
 if isempty(arg.mu)
-	[arg.mu, arg.mu3, arg.mu4] = get_mu(eig_SS, [], Nx*Ny, beta, ...
-                'split', 'ADMM-tridiag', 'mask', arg.mask, 'alph', arg.alph);
+	arg.mu = get_mu(eig_SS, [], Nx*Ny, beta, ...
+                'split', 'ADMM-tridiag', 'alph', arg.alph, 'fancy_mu34', arg.fancy_mu34);
+        % do we really want to mask for mu?
 end
 
 if length(arg.mu) ~= 5
@@ -85,16 +86,11 @@ eta2 = zeros(size(u2));
 eta3 = zeros(size(u3));
 eta4 = zeros(size(x));
 % renaming to match paper indeces
-mu0 = arg.mu(1);
-mu1 = arg.mu(2);
-mu2 = arg.mu(3);
-if arg.fancy_mu
-        mu3 = col(arg.mu3);%arg.mu(4); % size Nx x Ny
-        mu4 = col(arg.mu4);%arg.mu(5); % size Nx x Ny
-else
-        mu3 = arg.mu(4);
-        mu4 = arg.mu(5); 
-end
+mu0 = arg.mu{1};
+mu1 = arg.mu{2};
+mu2 = arg.mu{3};
+mu3 = col(arg.mu{4});
+mu4 = col(arg.mu{5});
 
 [eig_FF,Qbig] = get_eigs(F,Nc);
 
@@ -103,7 +99,7 @@ Wconst = arg.betaw * arg.alphw / beta;
 WVconst = arg.betaw * (1-arg.alphw) / beta;
 subCCT = single(-mu1 * ones(Ny - 1, Nx)); % tranpose dims 
 subCC = single(-mu0 * ones(Nx - 1, Ny));
-if arg.fancy_mu
+if arg.fancy_mu34
         diagCCT = single(mu1 * (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
                 reshape(mu3, Nx, Ny).' + mu1 * WVconst);
         diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
@@ -113,6 +109,13 @@ else
                 mu3 + mu1 * WVconst);
         diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
                 mu4 + mu0 * Wconst);
+end
+if Nx*Ny < 1000
+        diagvals = diagCC + mu2 * alph^2 .* eig_SS;
+        sub_long = col([subCC; zeros(1, Ny)]);
+        T = diag(sub_long(1:end-1), -1) + diag(diagvals(:)) + diag(sub_long(1:end-1), 1);
+        cond(T)
+        keyboard
 end
 
 % to do: make sure mex compiled

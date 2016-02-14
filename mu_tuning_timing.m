@@ -1,7 +1,7 @@
 % experimental data for tridiag_ADMM
 
 tridiag_exp_setup;
-niters = 350;
+niters = 50;
 
 % cost function for MFISTA lacks 1/2
 load(sprintf('./reviv/x_MFISTA_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x*MFIS*');
@@ -15,17 +15,19 @@ load(sprintf('./reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_i
 [xhat_trit, ~, nrmsd_trit, costOrig_trit, time_trit] = tridiag_ADMM(y_noise, ...
         F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask);
 [xhat_trit2, ~, nrmsd_trit2, costOrig_trit2, time_trit2] = tridiag_ADMM(y_noise, ...
-        F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu', 1);
+        F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu34', 1);
 
 [xhat_triat2, ~, nrmsd_triat2, costOrig_triat2, time_triat2] = tridiag_ADMM(y_noise, ...
-        F, S, CH, CV, 0, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu', 1);
-figure; plot(nrmsd_trit); hold on; plot(nrmsd_trit2,'r'); hold on; plot(nrmsd_triat2,'k')
+        F, S, CH, CV, 0, beta, xinit, x_tri_inf, niters, 'mask', mask, 'fancy_mu34', 1);
 
+plain_mu = num2cell(ones(1,5));
 [xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, ...
-        F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'mu', ones(1,5));
+        F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
+figure; plot(nrmsd_trit); hold on; plot(nrmsd_trit2,'r'); 
+hold on; plot(nrmsd_triat2,'k'); hold on; plot(nrmsd_tri,'m');
 
 [xhat_alp2, ~, nrmsd_alp2, costOrig_alp2, time_alp2] = AL_P2_gen(y_noise, ...
-        F, S, R, xinit, niters, beta, x_tri_inf,'inner_iter', 1, 'mask', mask, 'mu', ones(1,3));
+        F, S, R, xinit, niters, beta, x_tri_inf,'inner_iter', 1, 'mask', mask, 'mu', plain_mu(1:3));
 
 [xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, ...
         F, S, R, xinit, niters, beta, x_tri_inf,'inner_iter', 1, 'mask', mask);
@@ -38,6 +40,8 @@ send_mai_text('done with mu exp timing');
 display('DONE');
 figure; plot(cumsum(time_trit), nrmsd_trit); 
 hold on; plot(cumsum(time_alp2t), nrmsd_alp2t,'r')
+plot(cumsum(time_trit2), nrmsd_trit2, 'g');
+plot(cumsum(time_tri), nrmsd_tri, 'm');
 
 %%
 return

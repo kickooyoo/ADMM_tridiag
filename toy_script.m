@@ -36,7 +36,7 @@ noisey = y + sig*randn(size(y)) + i*sig*randn(size(y));
 % choose parameters
 
 % beta, spatial regularization parameter
-niters = 3000;
+niters = 300;
 
 beta = 22.85;
 
@@ -48,17 +48,20 @@ xinit = reshape(xzfill, nx, ny);
 pot = potential_fun('quad');
 
 R = [C1; C2];
-A_bs = [sqrt(1/2)*full(F*S); sqrt(beta)*full(R)];
-y_bs = [sqrt(1/2)*col(y); zeros(size(R*xinit(:)))];
-xhat_bs = reshape(A_bs\y_bs, nx, ny);
+% A_bs = [sqrt(1/2)*full(F*S); sqrt(beta)*full(R)];
+% y_bs = [sqrt(1/2)*col(y); zeros(size(R*xinit(:)))];
+% xhat_bs = reshape(A_bs\y_bs, nx, ny);
 
 % ALP2
-[xhat_P2, ~, err_P2, costOrig_P2] = AL_P2_gen_genpot(noisey, F, S, R,...
-        xinit, niters, beta, img, 'pot', pot, 'inner_iter', 3, 'mu', ones(1,3));
+% [xhat_P2, ~, err_P2, costOrig_P2] = AL_P2_gen_genpot(noisey, F, S, R,...
+%         xinit, niters, beta, img, 'pot', pot, 'inner_iter', 3, 'mu', ones(1,3));
 
 % tridiag solver
-[xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM_genpot(noisey, F, S, C1, C2, ...
-        alph, beta, xinit, img, niters, 'pot', pot); 
+% [xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM_genpot(noisey, F, S, C1, C2, ...
+%         alph, beta, xinit, img, niters, 'pot', pot, 'fancy_mu', 1); 
+
+[xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM(noisey, F, S, C1, C2, ...
+        alph, beta, xinit, img, niters, 'fancy_mu', 1);
 
 figure; subplot(2,2,1); im(xinit); subplot(2,2,2); im(xhat_bs); subplot(2,2,3); im(xhat_P2); subplot(2,2,4); im(xhat_tri)
 calc_NRMSE_over_mask(xhat_bs, xhat_tri, true(nx,ny))

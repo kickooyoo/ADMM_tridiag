@@ -1,16 +1,17 @@
-function [mu, mu3, mu4] = get_mu(SS, RR, Nr, lambda, varargin)
+function mu = get_mu(SS, RR, Nr, lambda, varargin)
 %function mu = get_mu(eigvalss)
 % set mu for nice condition numbers, based on AL-P2 splits
 
 % vals for x_tri_inf with beta = 2^19 and SNR 40 on slice 67
-arg.edge = 13600; % pixel diff for an edge
-arg.noise = 9300; % pixel diff for noise
+arg.edge = 23800; % pixel diff for an edge
+arg.noise = 4000; % pixel diff for noise
 %arg.edge = 13600*10; % pixel diff for an edge
 %arg.noise = 9300*10; % pixel diff for noise
 arg.split = 'AL-P2'; % 'ADMM-tridiag'
 arg.author = 'ramani';
 arg.alph = 0.5; % tridiag design param
 arg.mask = true(size(SS));
+arg.fancy_mu34 = false; % for ramani, tridiag
 arg = vararg_pair(arg, varargin);
 
 SSmax = max(col(abs(SS(arg.mask(:)))));
@@ -23,9 +24,6 @@ else
         RRmax = max(col(abs(RR)));
         RRmin = min(col(abs(RR)));
 end
-
-mu3 = [];
-mu4 = [];
 
 switch arg.author
         case 'mai'
@@ -56,9 +54,9 @@ switch arg.author
                 
                 switch arg.split
                         case 'AL-P2'
-                                mu = [x(1); mu_v; x(2)];
+                                mu = {x(1); mu_v; x(2)};
                         case 'ADMM-tridiag'
-                                mu = [mu_v; mu_v; x(1); x(2); x(2)];
+                                mu = {mu_v; mu_v; x(1); x(2); x(2)};
                         otherwise
                                 display(sprintf('unknown splitting scheme %s', arg.split));
                                 keyboard
@@ -68,6 +66,7 @@ switch arg.author
                 kapx = 0.9*SSmax/SSmin;
                 kapu = 24; % condition number of (FF + mu*I)
                 kapz = 12; % condition number of (RR + nu2/n1*I)`
+                ktri = 12;
                 switch arg.split
                         case 'AL-P2'
                                 % mu -> mu_u
@@ -77,35 +76,37 @@ switch arg.author
                                 mu_P2 = Nr / (kapu - 1); 
                                 nu1 = (kapz - 1) * nu2 / (RRmax - RRmin * kapz);
                                 
-                                mu = mu_P2*[1 nu1 nu2];
+                                mu = {mu_P2; mu_P2*nu1; mu_P2*nu2};
                         case 'ADMM-tridiag'
                                 % brainstorm:
                                 % enforce mu_0 = mu_1 for
                                 % symmetry
                                 
                                 nu2 = (SSmax - SSmin * kapx) / (kapx - 1);
-                                mu_P2 = Nr / (kapu - 1); 
+                                mu_P2 = Nr / (kapu - 1);
                                 nu1 = (kapz - 1) * nu2 / (RRmax - RRmin * kapz);
                                 
                                 
-                                mu_2 = Nr / (kapu - 1); 
+                                mu_2 = Nr / (kapu - 1);
                                 
-                                SSaprox = mean(col(SS));
-                                mu_0 = nu1*mu_P2; % same as AL-P2
-                                mu_1 = mu_0;
-                                mu_3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SSaprox);
-                                mu_4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SSaprox);
-                                
-                                if ndims_ns(SS) ~= 2
-%                                         SS = reshape(
-                                        keyboard
+                                if arg.fancy_mu34
+                                        fudge = 0.1;
+                                        mu_0 = mu_2*(1-arg.alph).^2*SSmax*(ktri - 1)/RRmax + fudge;
+                                        mu_1 = mu_0;
+                                        mu_3 = RRmax*mu_0/(ktri - 1) - (mu_2*(1-arg.alph).^2*SS);
+                                        mu_4 = RRmax*mu_1/(ktri - 1) - (mu_2*(arg.alph).^2*SS);        
+                                else
+                                        mu_0 = nu1*mu_P2; % same as AL-P2
+                                        mu_0 = lambda/arg.noise;
+                                        mu_1 = mu_0;
+                                        SSaprox = mean(col(SS));
+                                        mu_3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SSaprox);
+                                        mu_4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SSaprox);
                                 end
-                                mu3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SS);
-                                mu4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SS);
-
-                                mu = [mu_0 mu_1 mu_2 mu_3 mu_4];
                                 
-                                if any(mu < 0) || any(col(mu3) < 0) || any(col(mu_4) < 0)
+                                mu = {mu_0; mu_1; mu_2; mu_3; mu_4};
+                                
+                                if any([mu_0 mu_1 mu_2] < 0) || any(col(mu_3) < 0) || any(col(mu_4) < 0)
                                         display('invalid negative mu');
                                         keyboard;
                                 end
