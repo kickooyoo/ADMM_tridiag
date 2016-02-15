@@ -1,10 +1,10 @@
 function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
-        alph, beta, xinit, xtrue, niters, varargin)
+        beta, xinit, xtrue, niters, varargin)
 % function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
-%         alph, beta, mu, Nx, Ny, xinit, xtrue, niters, varargin)
+%        beta, xinit, xtrue, niters, varargin)
 % 
 % implements tridiag ADMM algo
-% inputs:
+% inputs11:
 %       y [Ns*Nc 1] undersampled data vector
 %       F (fatrix2) undersampled Fourier encoding matrix
 %       S (fatrix2) sensitivity map diagonal matrix
@@ -15,15 +15,25 @@ function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
 %       xtrue [Nx Ny] true solution, necessary for NRMSE comparison
 %       niters (integer) number of iterations
 % varargin:
-%       mu [5 1] AL tuning parameters, default all 1
+%       nthread (int32) number of threads
+%	mu [5 1] AL tuning parameters, default all 1
 %       mask (logical) [Nx Ny] mask for NRMSE calculation
-%       compile_mex recompiles tridiag_inv_mex_noni, default: false
 %       alph (scalar, \in [0, 1]) parameter balancing between u3 and x,
 %               default: 0.5
 %       alphw (scalar, \in [0, 1]) [[orthonormal wavelet case]]
 %               parameter balancing between u0 and u1, default: 0.5
 %       betaw (real scalar) [[orthonormal wavelet case]] 
 %               spatial regularization parameter for wavelets
+%	pot (potential_fun) for penalty, default l1
+%       compile_mex recompiles tridiag_inv_mex_noni, default: false
+%	debug
+%		plots all aux vars in each iteration
+%	timing (string) 'all' or 'tridiag'
+%	fancy_mu34 (boolean), uses spatially varying mu3, mu4
+%	parFFT (boolean), parfor for u2 update
+%	save_progress (string) 
+%		if not empty, will save tmp file with string suffix 
+%		every 1k iters
 % outputs:
 %       x [Nx Ny] reconstructed image
 %       xsaved [Nx Ny niters] estimated image at each iteration
@@ -32,6 +42,7 @@ function [x, xsaved, err, cost, time] = tridiag_ADMM(y, F, S, CH, CV, ...
 %       time [niters 1] wall time per each iteration
 %
 % 01/26/2016 Mai Le
+% 02/15/2016 bells and whistles 
 % University of Michigan
 
 Nx = size(xinit,1);
@@ -49,10 +60,11 @@ arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
 arg.fancy_mu34 = false;
 arg.parFFT = false;
+arg.save_progress = [];
+arg.pot = [];
 arg = vararg_pair(arg, varargin);
 
 if arg.parFFT
-%         parpool(Nc)
         tmp = gcp('nocreate');
         if prod(size(tmp)) == 0
                 parpool()
@@ -102,6 +114,18 @@ mu2 = arg.mu{3};
 mu3 = col(arg.mu{4});
 mu4 = col(arg.mu{5});
 
+if mu0 ~= mu1
+	display('using warning: otential function for mu0 everywhere');
+	keyboard
+end
+
+if isempty(arg.pot)
+	arg.pot = potential_fun('l1', beta/mu0);
+end
+shrink = @(a, t) arg.pot.shrink(a, t);
+calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + ...
+        beta * sum(col(arg.pot.potk(col(CH * x)))) + beta * sum(col(arg.pot.potk(col(CV * x))));
+
 [eig_FF,Qbig] = get_eigs(F,Nc);
 
 % pass tridiag of C'C into mex
@@ -119,13 +143,6 @@ else
                 mu3 + mu1 * WVconst);
         diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
                 mu4 + mu0 * Wconst);
-end
-if Nx*Ny < 1000
-        diagvals = diagCC + mu2 * alph^2 .* eig_SS;
-        sub_long = col([subCC; zeros(1, Ny)]);
-        T = diag(sub_long(1:end-1), -1) + diag(diagvals(:)) + diag(sub_long(1:end-1), 1);
-        cond(T)
-        keyboard
 end
 
 % to do: make sure mex compiled
@@ -145,8 +162,8 @@ tridiag_time(1) = 0;
 %while(iter < niters)
 for iter = 1:niters
         iter_start = tic;
-        u0 = soft(CH * double(x) - eta0, beta/mu0);
-        u1 = soft(CV * double(u3) - eta1, beta/mu1);
+        u0 = shrink(CH * x - eta0, beta/mu0);
+        u1 = shrink(CV * u3 - eta1, beta/mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny, arg.parFFT);
 	tridiag_tic = tic;
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
@@ -173,15 +190,17 @@ for iter = 1:niters
         eta3 = eta3 - (-u3 - v3);
         eta4 = eta4 - (x - v4);
         
-        %time = [time toc(iter_start)];
-        %iter = iter+1;
-        %err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
         time(iter + 1) = toc(iter_start);
 	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)
         end
+
+	if (mod(iter,1000) == 0) && ~isempty(arg.save_progress)
+		save(sprintf('tmp_%s',arg.save_progress), 'x');
+	end
+
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
         cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
 end
@@ -189,15 +208,6 @@ x = reshape(x, Nx, Ny);
 if strcmp(arg.timing, 'tridiag')
 	time = tridiag_time;
 end
-end
-
-function cost = calc_cost(beta, CH, CV, F, S, y, x)
-cost = norm(col(y) - col(F * (S * x)),2)^2/2 + beta * norm(col(CH * x),1) + ...
-        beta * norm(col(CV * x),1);
-end
-
-function out = soft(in,thresh)
-out = (in - thresh * sign(in)) .* (abs(in) > thresh);
 end
 
 function u2 = u2_update(mu2, alph, eig_FF, Q, F, S, y, u3, x, eta2, Nx, Ny, par)

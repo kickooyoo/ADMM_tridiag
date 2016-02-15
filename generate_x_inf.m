@@ -3,8 +3,9 @@ tridiag_exp_setup;
 
 niters = 50000;
 
+plain_mu = num2cell(ones(1,5));
 if do_tri
-	[xhat_tri, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, SoS, zeros(size(SoS)), niters, 'mu', ones(1,5));
+	[xhat_tri, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, SoS, zeros(size(SoS)), niters, 'mu', plain_mu, 'save_progress', 'tridiag_xinf');
 	x_tri_inf = xhat_tri;
 	save(sprintf('./reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
 end

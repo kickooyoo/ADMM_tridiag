@@ -1,39 +1,22 @@
 % setup tridiag exp
+slice = 38;
+% load in in vivo data
+if ~isvar('Sxtrue')
+	[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice);
+	[Nx, Ny, Nc] = size(Sxtrue);
+end
 truncate = 0;
+
 wavelets = 0;
 
-if ~isvar('mapped_im')
-	fn = [home_path 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
-
-	nc = 8;
-	[im4d,d] = recon3dft(fn,nc);
-	[body_coil_images,d] = recon3dft([home_path 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
-
-	% here we clip the images to see affect of factors of 2 on the FFT
-	if truncate
-		im4d = im4d(3:end-2,3:end-2,:,:); % size orig [256 144], now [254 140]
-	end
-
-	% slice selection
-	% sathish used 38, Muckley and Dan complained, so switch to 67
-	slice = 67;
-	slice = 38;
-	mapped_im = squeeze(im4d(:,:,slice,:));
-	Nx = size(im4d,1);
-	Ny = size(im4d,2);
-	dims = [Nx Ny];
-
-	% need to estimate sense maps for other slices
-	%load(sprintf('%sDocuments/mai_code/static_SENSE_splitting/saved_results/experimental/smap_est_slice_%d.mat', home_path, slice));
-	load(sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice), 'Smap_QPWLS'); S_est = Smap_QPWLS;
-	if truncate
-		sense_maps = S_est(3:end-2,3:end-2,:);
-	else
-		sense_maps = S_est;
-	end
-	clear S_est;
+if truncate
+	Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
+	sense_maps = sense_maps(3:end-2, 3:end-2, :);
+	body_coil = body_coil(3:end-2, 3:end-2);
+	[Nx, Ny] = size(body_coil);
 end
 
+% make sampling pattern
 if ~isvar('samp')
 	% generate sampling pattern
 	if 1
@@ -73,12 +56,22 @@ end
 
 % construct fatrices
 S = GsplineS(sense_maps, 1);
-F = GsplineF(Nx, Ny, 1, nc, 'samp', samp);
-[CH, CV] = construct_finite_diff(dims); 
+F = GsplineF(Nx, Ny, 1, Nc, 'samp', samp);
+[CH, CV] = construct_finite_diff([Nx Ny]); 
 R = [CH; CV];
+Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
+if wavelets
+        W = Godwt1(true(Nx, Ny));
+        betaw = beta;
+        alphw = 0.5;
+        RcircW = [Rcirc; W];
+        CHW = [CH; betaw * alphw / beta * W];
+        CVW = [CV; betaw * (1-alphw) / beta * W];     
+	RW = [CHW; CVW];
+end
 
 % generate data
-y = F * mapped_im(:);
+y = F * Sxtrue(:);
 SNR = 40;
 sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
 rng(0, 'twister')
@@ -87,13 +80,13 @@ y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 % initialize with SoS zero-fill solution
 center_samp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
-F_center = GsplineF(Nx, Ny, 1, nc, 'samp', center_samp);
-y_center = F_center * mapped_im(:);
+F_center = GsplineF(Nx, Ny, 1, Nc, 'samp', center_samp);
+y_center = F_center * Sxtrue(:);
 y_center_noise = y_center + sig*randn(size(y_center)) + 1i*sig*randn(size(y_center));
-zero_fill = reshape(F_center'*y_center_noise, Nx, Ny, nc)/(Nx * Ny);
+zero_fill = reshape(F_center'*y_center_noise, Nx, Ny, Nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
 % [xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
-%SoS_compensate = sum(conj(sense_maps).*mapped_im,3)./(sum(abs(sense_maps).^2,3));
+%SoS_compensate = sum(conj(sense_maps).*Sxtrue,3)./(sum(abs(sense_maps).^2,3));
 xinit = SoS;
 if 0
         [xinit, scale] = ir_wls_init_scale(A, y_center_noise, SoS);
@@ -104,11 +97,9 @@ if 0
         % testscale = 0.1600 - 0.4581i
 end
 
+% build mask
 if slice == 67
 	mask = generate_mask('slice67',1,Nx,Ny);
-	if truncate
-		mask = mask(3:end-2,3:end-2);
-	end
 elseif slice == 38
 	mask = generate_mask('slice38',1,Nx,Ny);
 else
@@ -129,13 +120,5 @@ end
 % tradeoff between S and x, between [0 1]
 alph = 0.5;
 % convergence parameters
-Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
-if wavelets
-        W = Godwt1(true(Nx, Ny));
-        betaw = beta;
-        alphw = 0.5;
-        RcircW = [Rcirc; W];
-        CHW = [CH; betaw * alphw / beta * W];
-        CVW = [CV; betaw * (1-alphw) / beta * W];     
-	RW = [CHW; CVW];
-end
+plain_mu = num2cell(ones(1,5));
+

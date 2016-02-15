@@ -44,13 +44,7 @@ switch arg.author
                 
                 
                 x0 = ones(1,2);
-                %for ii = 1:10
                 x = lsqnonlin(kappas, x0, zeros(1,2), Inf(1,2));
-                %end
-                %display('there are some vals');
-                %keyboard
-                %kappas(x)
-                
                 
                 switch arg.split
                         case 'AL-P2'
@@ -78,7 +72,6 @@ switch arg.author
                                 
                                 mu = {mu_P2; mu_P2*nu1; mu_P2*nu2};
                         case 'ADMM-tridiag'
-                                % brainstorm:
                                 % enforce mu_0 = mu_1 for
                                 % symmetry
                                 

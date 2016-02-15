@@ -17,13 +17,21 @@ function [x, xsave, err, costOrig, time] = AL_P2_gen(y, A, S, R, ...
 %       mu [3 1] AL tuning parameters, default all 1
 %       mask (logical) [Nx Ny] mask for NRMSE calculation
 %       zmethod (string) 'CG' for non circulant R or 'FFT' for circulant R
+%	pot (potential_fun), default l1
 %       maxv (real scalar) debugging, stops program if diverges (i.e. any
 %               values in x > maxv
 %       inner iter (int) inner CG steps for z-update
+% 	debug (boolean)
+%		plots all aux vars every iteration
+%	precon (boolean) uses preconditioner for inner CG
+%	save_x (boolean) if false, saves memory
+%	parFFT (boolean) uses parfor for u update
+%		
 % outputs:
 %       x [Nx Ny] reconstructed image
 %       xsave [Nx Ny niters] estimated image at each iteration
-%       err [niters 1] NRMSE at each iteration
+%       err [niters 1] NRMSE at each iteratiop
+
 %       costOrig [niters 1] objective value of original cost func at each iter
 %       time [niters 1] wall time per each iteration
 %
@@ -41,6 +49,7 @@ arg.debug = false;
 arg.precon = true;
 arg.save_x = false;
 arg.parFFT = false;
+arg.pot = [];
 arg = vararg_pair(arg, varargin);
 
 Nc = S.arg.Nc;
@@ -82,8 +91,11 @@ eta_u = zeros(size(u));
 eta_v = zeros(size(v));
 eta_z = zeros(size(z));
 
-% soft thresholding function, t is input, a is threshold
-soft = @(t,a) (t - a * sign(t)) .* (abs(t) > a);
+% shrinkage (e.g. soft thresholding) function, t is input, a is threshold
+if isempty(arg.pot)
+	arg.pot = potential_fun('l1', lambda/u_v);
+end
+shrink = @(a, t) arg.pot.shrink(a, t);
 
 if strcmp(upper(arg.zmethod), 'FFT')
 	A_CG = [];
@@ -101,18 +113,11 @@ else
 		keyboard;
 	end
         W_CG = Gdiag([u_v * ones(1, Rodim) u_z * ones(1, Nx*Ny)]);
-	%P_CG = Qn * (Gdiag((eigvalsrr + 1)) * Qn');
 	if arg.precon
 		P_CG = qpwls_precon('circ0', {A_CG, W_CG}, Gdiag(zeros(Nx*Ny,1)), true(Nx, Ny)); 
 	else
 		P_CG = 1;
 	end
-	% P = Q D Q'
-	% P H e0 ~~ e0
-	%P_CG = Gdiag(sqrt((eigvalsrr + 1) )) * Q;
-	%tmp = P_CG*(A_CG'*A_CG*e0(:));
-	%norm(e0(:) - tmp)
-	%keyboard
 end
 
 [eigvalsaa, Qbig] = get_eigs(A, Nc); 
@@ -120,7 +125,7 @@ end
 calc_errcost = 1;
 if (calc_errcost)
         calc_orig_cost = @(y, A, S, R, x, lambda) norm(col(y - A*(S*x)),2)^2/2 + ...
-                lambda*norm(col(R*x),1);
+                lambda* sum(col(arg.pot.potk(col(R*x))));
         err = calc_NRMSE_over_mask(x, xtrue, arg.mask);
         costOrig = calc_orig_cost(y, A, S, R, x, lambda);
 end
@@ -138,7 +143,7 @@ for ii = 1:niters
                 keyboard
         end
         u = u_update(Qbig, A, S, y, x, eta_u, u_u, Nx*Ny, eigvalsaa, arg.parFFT);
-        v = soft(R*z + eta_v, lambda/u_v); 
+        v = shrink(R*z + eta_v, lambda/u_v); 
         z = z_update(Q, A_CG, W_CG, P_CG, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
         if any(isnan(z)) || any(isinf(z)) || any(abs(z) > arg.maxv)
                 keyboard
@@ -157,8 +162,8 @@ for ii = 1:niters
         eta_z = eta_z - (z - x);
         time = [time toc(iter_start)];
         if (calc_errcost)
-                err = [err calc_NRMSE_over_mask(x, xtrue, arg.mask)];
-                costOrig = [costOrig calc_orig_cost(y, A, S, R, x, lambda)];
+                err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+                costOrig(iter + 1) = calc_orig_cost(y, A, S, R, x, lambda);
         end
         if mod(ii,10) == 0
                 printf('%d/%d iterations',ii,niters)

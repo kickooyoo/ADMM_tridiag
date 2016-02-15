@@ -8,9 +8,13 @@ niters = 1000;
 
 % already done 2.^(3:20);
 betas = 2.^(20:30);
+betas = 2.^(10:19);
+betas = 2.^(10:30);
 
 method = 'tridiag';
-method = 'MFISTA';
+%method = 'MFISTA';
+
+load(sprintf('body_coil_slice%d.mat', slice),'body_coil')
 
 clear xhat_betas
 for ii = 1:length(betas)
@@ -19,8 +23,8 @@ for ii = 1:length(betas)
 	if gen 
 		switch method
 			case 'tridiag'
-				[xhat_betas(:,:,ii), ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y, F, S, CH, CV, alph, beta, xinit, zeros(size(SoS)), niters, 'mu', mu);
-				x_tri_inf = xhat_tri;
+				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y, F, S, CH, CV, alph, beta, xinit, zeros(size(SoS)), niters, 'mu', ones(1,5));
+				xhat_betas(:,:,ii) = x_tri_inf;
 				save(sprintf('reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
 			case 'MFISTA' 
 				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, beta, niters);
@@ -50,8 +54,9 @@ for ii = 1:length(betas)
 			otherwise
 				keyboard;
 		end
+		curr_img = xhat_betas(:,:,ii);
+		body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
 	end
 end
-figure; jf_slicer(xhat_betas);
 figure; im(xhat_betas);
 if gen, send_mai_text('done searching betas'); end
