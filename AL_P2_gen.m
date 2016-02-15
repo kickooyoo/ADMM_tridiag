@@ -162,11 +162,11 @@ for ii = 1:niters
         eta_z = eta_z - (z - x);
         time = [time toc(iter_start)];
         if (calc_errcost)
-                err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
-                costOrig(iter + 1) = calc_orig_cost(y, A, S, R, x, lambda);
+                err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+                costOrig(ii + 1) = calc_orig_cost(y, A, S, R, x, lambda);
         end
         if mod(ii,10) == 0
-                printf('%d/%d iterations',ii,niters)
+                printf('%d/%d iterations', ii, niters)
         end
    	if arg.save_x
 	   	xsave(:,:,ii) = reshape(x, Nx, Ny);
@@ -174,8 +174,8 @@ for ii = 1:niters
 end
 x = reshape(x, Nx, Ny);
 if (~calc_errcost)
-        err = zeros(niters+1, 1);
-        costOrig = zeros(niters+1, 1);
+        err = zeros(niters + 1, 1);
+        costOrig = zeros(niters + 1, 1);
 end
 end
 

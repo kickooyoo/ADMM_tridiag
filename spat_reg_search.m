@@ -7,14 +7,19 @@ end
 niters = 1000;
 
 % already done 2.^(3:20);
-betas = 2.^(20:30);
-betas = 2.^(10:19);
-betas = 2.^(10:30);
+betas = 2.^(10:20);
 
 method = 'tridiag';
 %method = 'MFISTA';
+if ~issim && ~isvar('body_coil')
+	load(sprintf('body_coil_slice%d.mat', slice),'body_coil')
+end
 
-load(sprintf('body_coil_slice%d.mat', slice),'body_coil')
+if issim 
+	slice_str = 'sim'
+else
+	slice_str = sprintf('slice%d', slice);
+end
 
 clear xhat_betas
 for ii = 1:length(betas)
@@ -23,20 +28,20 @@ for ii = 1:length(betas)
 	if gen 
 		switch method
 			case 'tridiag'
-				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y, F, S, CH, CV, alph, beta, xinit, zeros(size(SoS)), niters, 'mu', ones(1,5));
+				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y, F, S, CH, CV, beta, xinit, zeros(size(SoS)), niters);
 				xhat_betas(:,:,ii) = x_tri_inf;
-				save(sprintf('reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
+				save(sprintf('reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
 			case 'MFISTA' 
 				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, beta, niters);
 				xhat_betas(:,:,ii) = x_MFISTA;
-				save(sprintf('reviv/x_MFISTA_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_MFISTA');
+				save(sprintf('reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_MFISTA');
 			otherwise
 				keyboard;
 		end
 	else
 		switch method
 			case 'tridiag'
-				fname = sprintf('reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta);
+				fname = sprintf('reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta);
 				if exist(fname)
 					load(fname, 'x_tri_inf');
 					xhat_betas(:,:,ii) = x_tri_inf;
@@ -44,7 +49,7 @@ for ii = 1:length(betas)
 					display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 				end
 			case 'MFISTA'
-				fname = sprintf('reviv/x_MFISTA_inf_slice%d_beta%.*d.mat', slice, 3, beta);
+				fname = sprintf('reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta);
 				if exist(fname)
 					load(fname, 'x_MFISTA');
 					xhat_betas(:,:,ii) = x_MFISTA;

@@ -95,6 +95,13 @@ switch arg.author
                                         SSaprox = mean(col(SS));
                                         mu_3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SSaprox);
                                         mu_4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SSaprox);
+					if (mu_3 < 0) || (mu_4 < 0)
+						mu_0 = nu1*mu_P2; % same as AL-P2
+						mu_1 = mu_0;
+						mu_3 = kapz*mu_0 - (mu_2*(1-arg.alph).^2*SSaprox);
+						mu_4 = kapz*mu_1 - (mu_2*(arg.alph).^2*SSaprox);
+					end
+                                
                                 end
                                 
                                 mu = {mu_0; mu_1; mu_2; mu_3; mu_4};

@@ -54,7 +54,7 @@ R = [C1; C2];
 
 % ALP2
 % [xhat_P2, ~, err_P2, costOrig_P2] = AL_P2_gen_genpot(noisey, F, S, R,...
-%         xinit, niters, beta, img, 'pot', pot, 'inner_iter', 3, 'mu', ones(1,3));
+%         xinit, niters, beta, img, 'pot', pot, 'inner_iter', 3, 'mu', plain_mus(1:3));
 
 % tridiag solver
 % [xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM_genpot(noisey, F, S, C1, C2, ...

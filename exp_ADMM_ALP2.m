@@ -3,47 +3,7 @@
 tridiag_exp_setup;
 niters = 350;
 
-if 1
-	% load xinfs
-	load(sprintf('./reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
-	if truncate
-		x_tri_inf = reshape(x_tri_inf, 256, 144);
-		x_tri_inf = x_tri_inf(3:end-2, 3:end-2);
-	else
-		x_tri_inf = x_tri_inf;
-	end
-	display('using tridiag ADMM as true!')
-else 
-	load(sprintf('./reviv/x_MFISTA_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x*MFIS*');
-		if isvar('xMFIS')
-			x_MFISTA = xMFIS;
-		end
-	if truncate
-		xMFIS = reshape(x_MFISTA, 256, 144);
-		x_tri_inf = xMFIS(3:end-2, 3:end-2);
-	else
-		x_tri_inf = x_MFISTA;
-	end
-end
-
-% maybe not xinf since not guaranteed to converge
-% load([home 'Documents/mai_code/ADMM_tridiag/reviv/al_p2_chcv_5000iter.mat'],'xhat_alp2');
-% if truncate
-%         xhat_alp2 = reshape(xhat_alp2, 256, 144);
-%         x_alp2_inf = xhat_alp2(3:end-2, 3:end-2);
-% else
-%         x_alp2_inf = xhat_alp2;
-% end
-
-if 0
-load(sprintf('./reviv/x_alp2c_inf_slice%d_beta%.*d.mat', slice, 3, beta),'x_alp2c_inf');
-if truncate
-        x_alp2c_inf = reshape(x_alp2c_inf, 256, 144);
-        x_alp2c_inf = x_alp2c_inf(3:end-2, 3:end-2);
-else
-        x_alp2c_inf = x_alp2c_inf;
-end
-end
+x_tri_inf = load_xinf(slice, beta);
 
 if wavelets 
 [xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(...

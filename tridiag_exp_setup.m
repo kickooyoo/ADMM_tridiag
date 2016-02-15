@@ -1,10 +1,16 @@
 % setup tridiag exp
-slice = 38;
-% load in in vivo data
-if ~isvar('Sxtrue')
-	[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice);
-	[Nx, Ny, Nc] = size(Sxtrue);
+if ~issim
+	slice = 38;
+	% load in in vivo data
+	if ~isvar('Sxtrue')
+		[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice);
+	end
+else
+	slice = 0;
+	[sense_maps, body_coil, Sxtrue] = sim_setup();
 end
+
+[Nx, Ny, Nc] = size(Sxtrue);
 truncate = 0;
 
 wavelets = 0;
@@ -19,9 +25,10 @@ end
 % make sampling pattern
 if ~isvar('samp')
 	% generate sampling pattern
-	if 1
-		if exist('PD_sampling_256x144_R6_center8.mat')
-			load('PD_sampling_256x144_R6_center8.mat','samp');
+	if 1	
+		samp_fname = sprintf('PD_sampling_%dx%d_R6_center8.mat', Nx, Ny);
+		if exist(samp_fname)
+			load(samp_fname);
 		else
 			reduction = 6;
 			params.Nx = Nx;
@@ -30,7 +37,7 @@ if ~isvar('samp')
 			params.h = 1;
 			params.R = round(Nx*Ny/reduction);
 			samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0, 'ellipse', 0, 'ncenter', 8, 'vardensity', 0));
-			save('PD_sampling_256x144_R6_center8.mat','samp');
+			save(samp_fname,'samp');
 		end
 	else
 		load('al-p2/PDiskR256x256L1R2.252.25B0.8R1D1pctg20.2972.mat', 'SP', 'sampname');
@@ -114,11 +121,10 @@ elseif slice == 38
 	beta = 2^28; % for slice 38 and l2b = 16 samp
 	beta = 2^25; % for slice 38 and sathish samp and sathish samp
 	beta = 2^20; % for slice 38 and new samp R=6, sathish smap
-else
+else	
+	display(sprintf('unknown beta for slice %d', slice));
 	keyboard;
 end
-% tradeoff between S and x, between [0 1]
-alph = 0.5;
 % convergence parameters
 plain_mu = num2cell(ones(1,5));
 
