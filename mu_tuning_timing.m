@@ -45,6 +45,11 @@ plot(cumsum(time_tri), nrmsd_tri, 'm');
 
 %%
 return
+%%
+[xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, ...
+        F, S, R, xinit, niters, beta, x_tri_inf,'inner_iter', 1, 'mask', mask, 'parFFT', true);
+
+%%
 slice = 38;
 load(sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice), 'Smap_QPWLS');
 SS = sos_combine(permute(Smap_QPWLS, [1 2 4 3]));

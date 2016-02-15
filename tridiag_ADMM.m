@@ -48,9 +48,17 @@ arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
 arg.fancy_mu34 = false;
+arg.parFFT = false;
 arg = vararg_pair(arg, varargin);
 
-tic
+if arg.parFFT
+%         parpool(Nc)
+        tmp = gcp('nocreate');
+        if prod(size(tmp)) == 0
+                parpool()
+        end
+end
+
 % eigvals for SS, get mus
 SS = S'*S;
 eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
@@ -60,6 +68,8 @@ if isempty(arg.mu)
                 'split', 'ADMM-tridiag', 'alph', arg.alph, 'fancy_mu34', arg.fancy_mu34);
         % do we really want to mask for mu?
 end
+
+tic
 
 if length(arg.mu) ~= 5
 	display('wrong size for mu convergence parameters');
@@ -137,7 +147,7 @@ for iter = 1:niters
         iter_start = tic;
         u0 = soft(CH * double(x) - eta0, beta/mu0);
         u1 = soft(CV * double(u3) - eta1, beta/mu1);
-        u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny);
+        u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny, arg.parFFT);
 	tridiag_tic = tic;
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
         x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, arg.nthread);
@@ -190,9 +200,21 @@ function out = soft(in,thresh)
 out = (in - thresh * sign(in)) .* (abs(in) > thresh);
 end
 
-function u2 = u2_update(mu2, alph, eig_FF, Q, F, S, y, u3, x, eta2, Nx, Ny)
+function u2 = u2_update(mu2, alph, eig_FF, Q, F, S, y, u3, x, eta2, Nx, Ny, par)
 arg_u2 = F' * y + mu2 * ((1-alph) * S * u3 + alph * S * x - eta2);
-u2 = Q' * ((Q * arg_u2) ./ (eig_FF + mu2)) / (Nx * Ny);
+if par
+        arg_u2 = reshape(arg_u2, F.arg.Nx, F.arg.Ny, F.arg.Nc);
+        parfor ii = 1:F.arg.Nc
+                U2(:,:,ii) = fft2(arg_u2(:,:,ii));
+        end
+        U2 = U2./(reshape(eig_FF, F.arg.Nx, F.arg.Ny, F.arg.Nc) + mu2);
+        parfor ii = 1:F.arg.Nc
+                u2(:,:,ii) = ifft2(U2(:,:,ii));
+        end
+        u2 = col(u2);
+else
+        u2 = Q' * ((Q * arg_u2) ./ (eig_FF + mu2)) / (Nx * Ny);
+end
 end
 
 function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, CV, S, u1, u2, x, ...

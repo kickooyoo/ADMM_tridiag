@@ -40,9 +40,17 @@ arg.inner_iter = 1;
 arg.debug = false;
 arg.precon = true;
 arg.save_x = false;
+arg.parFFT = false;
 arg = vararg_pair(arg, varargin);
 
 Nc = S.arg.Nc;
+
+if arg.parFFT
+        tmp = gcp('nocreate');
+        if prod(size(tmp)) == 0
+                parpool(Nc)
+        end
+end
 
 tic;
 % eigvals for SS, get mus
@@ -129,7 +137,7 @@ for ii = 1:niters
         if any(isnan(x)) || any(isinf(x)) || any(abs(x) > arg.maxv)
                 keyboard
         end
-        u = u_update(Qbig, A, S, y, x, eta_u, u_u, Nx*Ny, eigvalsaa);
+        u = u_update(Qbig, A, S, y, x, eta_u, u_u, Nx*Ny, eigvalsaa, arg.parFFT);
         v = soft(R*z + eta_v, lambda/u_v); 
         z = z_update(Q, A_CG, W_CG, P_CG, v, x, z, u_v, u_z, R, eta_v, eta_z, eigvalsrr, Nx, Ny, arg);
         if any(isnan(z)) || any(isinf(z)) || any(abs(z) > arg.maxv)
@@ -172,10 +180,22 @@ rhs = u_u * S' * (u - eta_u) + u_z * (z - eta_z);
 x = rhs ./ Hx;
 end
 
-function u = u_update(Qbig, A, S, y, x, eta_u, u_u, N, eigvalsaa)
+function u = u_update(Qbig, A, S, y, x, eta_u, u_u, N, eigvalsaa, par)
 Hu = eigvalsaa + u_u;
 rhs = A' * y + u_u * (S * x + eta_u);
-u = Qbig' * ((Qbig * rhs) ./ Hu) / N;
+if par
+        rhs = reshape(rhs, A.arg.Nx, A.arg.Ny, A.arg.Nc);
+        parfor ii = 1:A.arg.Nc
+                U(:,:,ii) = fft2(rhs(:,:,ii));
+        end
+        U = U./reshape(Hu, A.arg.Nx, A.arg.Ny, A.arg.Nc);
+        parfor ii = 1:A.arg.Nc
+                u(:,:,ii) = ifft2(U(:,:,ii));
+        end
+        u = col(u);
+else
+        u = Qbig' * ((Qbig * rhs) ./ Hu) / N;
+end
 end
 
 % z-update
