@@ -1,6 +1,6 @@
-colors = 'cmbrgk';
+colors = 'cmbrgky';
 exps = who('time*');
-start_ndx = 2;
+start_ndx = 1;
 end_ndx = niters+1;
 xform = @(x) 20*log10(x);
 figure; hold on; 
@@ -9,7 +9,7 @@ for ii = 1:length(exps)
 	curr_name = exps{ii};
 	suffix_ndx = strfind(curr_name, '_');
 	suffix = curr_name(suffix_ndx + 1 : end);
-	eval(sprintf('plot(cumsum(%s(start_ndx:end_ndx)), xform(nrmsd_%s(start_ndx:end_ndx)), ''%s'')', curr_name, suffix, colors(ii)));
+	eval(sprintf('plot(cumsum(%s(start_ndx:end_ndx)), xform(nrmsd_%s(start_ndx:end_ndx)), ''%s'')', curr_name, suffix, colors(mod(ii, length(colors)) + 1)));
 	hold on; 
 	legend_str = [legend_str; suffix];
 end
@@ -25,7 +25,7 @@ for ii = 1:length(exps)
 	curr_name = exps{ii};
 	suffix_ndx = strfind(curr_name, '_');
 	suffix = curr_name(suffix_ndx + 1 : end);
-	eval(sprintf('plot(xform(nrmsd_%s(start_ndx:end_ndx)), ''%s'')', suffix, colors(ii)));
+	eval(sprintf('plot(xform(nrmsd_%s(start_ndx:end_ndx)), ''%s'')', suffix, colors(mod(ii, length(colors)) + 1)));
 	hold on; 
 	legend_str = [legend_str; suffix];
 end

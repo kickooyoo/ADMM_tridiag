@@ -1,5 +1,5 @@
 if gen
-	tridiag_exp_setup;
+	exp_setup;
 else
 	slice = 67;
 	slice = 38;
@@ -7,7 +7,7 @@ end
 niters = 1000;
 
 % already done 2.^(3:20);
-betas = 2.^(10:20);
+betas = 2.^(2:30);
 
 method = 'tridiag';
 %method = 'MFISTA';
@@ -15,8 +15,13 @@ if ~issim && ~isvar('body_coil')
 	load(sprintf('body_coil_slice%d.mat', slice),'body_coil')
 end
 
+if issim
+	[sense_maps, body_coil, Sxtrue] = sim_setup();
+	[Nx, Ny, Nc] = size(Sxtrue);
+	mask = true(Nx, Ny);
+end
 if issim 
-	slice_str = 'sim'
+	slice_str = 'sim';
 else
 	slice_str = sprintf('slice%d', slice);
 end
@@ -28,7 +33,7 @@ for ii = 1:length(betas)
 	if gen 
 		switch method
 			case 'tridiag'
-				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y, F, S, CH, CV, beta, xinit, zeros(size(SoS)), niters);
+				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y, F, S, CH, CV, beta, xinit, zeros(size(SoS)), niters);
 				xhat_betas(:,:,ii) = x_tri_inf;
 				save(sprintf('reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
 			case 'MFISTA' 

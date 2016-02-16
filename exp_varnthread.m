@@ -1,6 +1,5 @@
-% experimental data for tridiag_ADMM
-
-tridiag_exp_setup;
+% timing for varied number of threads in ADMM tridiag
+exp_setup;
 niters = 300;
 
 % load xinfs
@@ -13,7 +12,7 @@ end
 nthread_vals = int32([1 2 4 10 20 40]);% 80 160]);
 for ii = 1:length(nthread_vals);
 	nthread = nthread_vals(ii);
-	[xhat_tri(:,:,ii), ~, nrmsd_tri(:,ii), costOrig_tri(:,ii), time_tri(:,ii)] = tridiag_ADMM(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', nthread, 'timing', 'tridiag');
+	[xhat_tri(:,:,ii), ~, nrmsd_tri(:,ii), costOrig_tri(:,ii), time_tri(:,ii)] = ADMM_tridiag(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', nthread, 'timing', 'tridiag');
 end
 
 save(sprintf('./reviv/timing_tridiag_only_%dx%d_%diter_varthread.mat', Nx, Ny, niters));

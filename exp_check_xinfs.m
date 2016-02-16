@@ -1,7 +1,6 @@
 % checking if MFISTA, ADMM-tridiag, and AL-P2 converge to the same solution
 
-
-tridiag_exp_setup;
+exp_setup;
 niters = 25000;
 
 load(sprintf('./reviv/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
@@ -19,9 +18,9 @@ load(sprintf('./reviv/x_alp2_inf_slice%d_beta%.*d.mat', slice, 3, beta),'x_alp2_
 
 [xhat_alp2, ~, nrmsd_alp2, costOrig_alp2, time_alp2] = AL_P2_gen(y_noise, F, S, R, x_tri_inf, niters, beta, x_alp2_inf,'inner_iter',3, 'mask', mask);
 [xhat_alp2_selfinit, ~, nrmsd_alp2_selfinit, costOrig_alp2_selfinit, time_alp2_selfinit] = AL_P2_gen(y_noise, F, S, R, x_alp2_inf, niters, beta, x_alp2_inf,'inner_iter',3, 'mask', mask);
-[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xMFIS, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
-[xhat_tri_selfinit, ~, nrmsd_tri_self_init, costOrig_tri_selfinit, time_tri_selfinit] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, x_tri_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
-[xhat_tri_alp2init, ~, nrmsd_tri_alp2init, costOrig_tri_alp2init, time_tri_alp2init] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, x_alp2_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
+[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xMFIS, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
+[xhat_tri_selfinit, ~, nrmsd_tri_self_init, costOrig_tri_selfinit, time_tri_selfinit] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, x_tri_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
+[xhat_tri_alp2init, ~, nrmsd_tri_alp2init, costOrig_tri_alp2init, time_tri_alp2init] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, x_alp2_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
 [xhat_MFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y_noise, x_tri_inf, F, S, beta, niters);
 
 save(sprintf('./reviv/check_xinfs_%dx%d_%diter_%dslice.mat', Nx, Ny, niters, slice));

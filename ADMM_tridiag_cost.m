@@ -1,5 +1,5 @@
-function cost = tridiag_ADMM_cost(y, F, S, CH, CV, beta, x)
-%function cost = tridiag_ADMM_cost(y, F, S, CH, CV, beta, x)
+function cost = ADMM_tridiag_cost(y, F, S, CH, CV, beta, x)
+%function cost = ADMM_tridiag_cost(y, F, S, CH, CV, beta, x)
 % 
 % inputs:
 %       y [Ns*Nc 1] undersampled data vector

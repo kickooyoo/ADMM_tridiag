@@ -121,7 +121,9 @@ elseif slice == 38
 	beta = 2^28; % for slice 38 and l2b = 16 samp
 	beta = 2^25; % for slice 38 and sathish samp and sathish samp
 	beta = 2^20; % for slice 38 and new samp R=6, sathish smap
-else	
+elseif (slice == 0) && issim
+	beta = 2^13;
+else
 	display(sprintf('unknown beta for slice %d', slice));
 	keyboard;
 end

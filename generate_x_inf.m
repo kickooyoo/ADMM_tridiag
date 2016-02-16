@@ -1,5 +1,5 @@
 % generate xinf for tridiag experiment
-tridiag_exp_setup;
+exp_setup;
 
 niters_inf = 50000;
 
@@ -10,7 +10,7 @@ else
 end
 
 if do_tri
-	[xhat_tri, ~, ~, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', plain_mu, 'save_progress', 'tridiag_xinf');
+	[xhat_tri, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', plain_mu, 'save_progress', 'tridiag_xinf');
 	x_tri_inf = xhat_tri;
 	save(sprintf('./reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf', 'niters_inf');
 end
@@ -21,14 +21,14 @@ if do_circ
 	save(sprintf('./reviv/x_alp2c_inf_%s_beta%.*d.mat', slice_str, 3, beta),'x_alp2c_inf', 'niters_inf');
 end
 
-if 1
+if 0%1
 	[xhat_alp2, ~, ~, costOrig_alp2, time_alp2] = AL_P2_gen(y_noise, F, S, Rcirc, SoS, niters_inf, beta, zeros(size(SoS)), 'inner_iter', 3);
 	x_alp2_inf = xhat_alp2;
 	save(sprintf('./reviv/x_alp2_inf_%s_beta%.*d.mat', slice_str, 3, beta),'x_alp2_inf', 'niters_inf');
 end
 if wavelets
 
-	[xhat_triw, ~, ~, costOrig_triw, time_triw] = tridiag_ADMM_W(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', mu);
+	[xhat_triw, ~, ~, costOrig_triw, time_triw] = ADMM_tridiag_W(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', mu);
 	x_triw_inf = xhat_triw;
 	save(sprintf('./reviv/x_triw_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_triw_inf', 'niters_inf');
 
@@ -43,8 +43,8 @@ if do_circ && do_MFISTA
 end
 
 if do_MFISTA
-	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf, 'niters_inf');
-	save(sprintf('./reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'xMFIS');
+	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf);
+	save(sprintf('./reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'xMFIS', 'niters_inf');
 end
 
 send_mai_text('done with xinf, now run timing tests')

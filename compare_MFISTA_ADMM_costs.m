@@ -1,4 +1,4 @@
-tridiag_exp_setup;
+exp_setup;
 niters = 10;
 x = xinit;
 
@@ -17,7 +17,7 @@ for jj = 1:length(betas)
 	beta_test = betas(jj);
 	%for ii = 1:num_test
 		x_test = test_xs(:,:,ii);
-		cost_tridiag(ii,jj) = tridiag_ADMM_cost(test_y, test_F, test_S, CH, CV, beta_test, x_test);
+		cost_tridiag(ii,jj) = ADMM_tridiag_cost(test_y, test_F, test_S, CH, CV, beta_test, x_test);
 
 		cost_MFISTA(ii,jj) = MFISTA_cost_wrapper(Nx, Ny, R, test_y, x_test, test_F, test_S, beta_test);
 	%end

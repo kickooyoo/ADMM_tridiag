@@ -71,7 +71,7 @@ for iter = 1:niters
 end
 
 % tridiag solver
-[xhat_tri, xsaved_tri, cost_tri] = tridiag_ADMM(noisey, F, S, C1, C2, ...
+[xhat_tri, xsaved_tri, cost_tri] = ADMM_tridiag(noisey, F, S, C1, C2, ...
         alph, beta, xinit, img, niters); % xtrue should be xinf
 
 for iter = 1:niters

@@ -83,7 +83,7 @@ switch arg.author
                                 mu_2 = Nr / (kapu - 1);
                                 
                                 if arg.fancy_mu34
-                                        fudge = 0.1;
+                                        fudge = 100;
                                         mu_0 = mu_2*(1-arg.alph).^2*SSmax*(ktri - 1)/RRmax + fudge;
                                         mu_1 = mu_0;
                                         mu_3 = RRmax*mu_0/(ktri - 1) - (mu_2*(1-arg.alph).^2*SS);

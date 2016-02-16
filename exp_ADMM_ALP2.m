@@ -1,6 +1,6 @@
 % experimental data for tridiag_ADMM
 
-tridiag_exp_setup;
+exp_setup;
 niters = 350;
 
 x_tri_inf = load_xinf(slice, beta);
@@ -19,11 +19,11 @@ for ii = 1:1%3%5
 end
 
 %[xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(y_noise, F, S, Rcirc, xinit, niters, beta, x_alp2c_inf, 'zmethod','fft', 'mask', mask);
-[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'mu', ones(1,5));
-%[xhat_tri_max, ~, nrmsd_tri_max, costOrig_tri_max, time_tri_max] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')),'mu', ones(1,5));
-%[xhat_tri_2max, ~, nrmsd_tri_2max, costOrig_tri_2max, time_tri_2max] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(160),'mu', ones(1,5));
-%[xhat_tri_mu, ~, nrmsd_tri_mu, costOrig_tri_mu, time_tri_mu] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask);
-%[xhat_tri_max_mu, ~, nrmsd_tri_max_mu, costOrig_tri_max_mu, time_tri_max_mu] = tridiag_ADMM(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')));
+[xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'mu', ones(1,5));
+%[xhat_tri_max, ~, nrmsd_tri_max, costOrig_tri_max, time_tri_max] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')),'mu', ones(1,5));
+%[xhat_tri_2max, ~, nrmsd_tri_2max, costOrig_tri_2max, time_tri_2max] =  ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(160),'mu', ones(1,5));
+%[xhat_tri_mu, ~, nrmsd_tri_mu, costOrig_tri_mu, time_tri_mu] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask);
+%[xhat_tri_max_mu, ~, nrmsd_tri_max_mu, costOrig_tri_max_mu, time_tri_max_mu] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')));
 
 save(sprintf('./reviv/mpel8_timing_%dx%d_%diter_%dslice_ADMMtrue.mat', Nx, Ny, niters, slice));
 send_mai_text('done with mpel8 timing');
