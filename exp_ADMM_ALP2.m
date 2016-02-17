@@ -25,7 +25,7 @@ end
 %[xhat_tri_mu, ~, nrmsd_tri_mu, costOrig_tri_mu, time_tri_mu] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask);
 %[xhat_tri_max_mu, ~, nrmsd_tri_max_mu, costOrig_tri_max_mu, time_tri_max_mu] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', int32(maxNumCompThreads('automatic')));
 
-save(sprintf('./reviv/mpel8_timing_%dx%d_%diter_%dslice_ADMMtrue.mat', Nx, Ny, niters, slice));
+save(sprintf('./reviv/curr/mpel8_timing_%dx%d_%diter_%s_ADMMtrue.mat', Nx, Ny, niters, slice_str));
 send_mai_text('done with mpel8 timing');
 
 display('DONE');

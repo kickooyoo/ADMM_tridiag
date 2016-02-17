@@ -1,5 +1,8 @@
 % setup tridiag exp
 if ~issim
+	if ~isvar('home_path')
+		tridiag_setup;
+	end
 	slice = 38;
 	% load in in vivo data
 	if ~isvar('Sxtrue')
@@ -23,20 +26,23 @@ if truncate
 end
 
 % make sampling pattern
+if ~isvar('reduction')
+	reduction = 6;%6;
+	display(sprintf('sampling factor set to: %d', reduction));
+end
 if ~isvar('samp')
 	% generate sampling pattern
 	if 1	
-		samp_fname = sprintf('PD_sampling_%dx%d_R6_center8.mat', Nx, Ny);
+		samp_fname = sprintf('PD_sampling_%dx%d_R%d_center8.mat', Nx, Ny, reduction);
 		if exist(samp_fname)
 			load(samp_fname);
 		else
-			reduction = 6;
 			params.Nx = Nx;
 			params.Ny = Ny;
 			params.Nf = 1;
 			params.h = 1;
 			params.R = round(Nx*Ny/reduction);
-			samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0, 'ellipse', 0, 'ncenter', 8, 'vardensity', 0));
+			samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0, 'ellipse', 0, 'ncenter', 8, 'vardensity', 0, 'fudge', 0.75));
 			save(samp_fname,'samp');
 		end
 	else
@@ -117,10 +123,17 @@ end
 if slice == 67
 	beta = 2^19;
 elseif slice == 38
-	beta = 2^24; % for slice 38 and l2b = 12 samp
-	beta = 2^28; % for slice 38 and l2b = 16 samp
-	beta = 2^25; % for slice 38 and sathish samp and sathish samp
-	beta = 2^20; % for slice 38 and new samp R=6, sathish smap
+	%beta = 2^24; % for slice 38 and l2b = 12 samp
+	%beta = 2^28; % for slice 38 and l2b = 16 samp
+	%beta = 2^25; % for slice 38 and sathish samp and sathish samp
+	if reduction <= 8
+		beta = 2^20; % for slice 38 and new samp R=6, sathish smap
+	elseif reduction == 12
+		beta = 2^18;
+	else
+		display('unknown what is best beta, choosing 2^20 arbitrarily')
+		beta = 2^20;
+	end
 elseif (slice == 0) && issim
 	beta = 2^13;
 else
@@ -130,3 +143,9 @@ end
 % convergence parameters
 plain_mu = num2cell(ones(1,5));
 
+% for file saving and loading
+if issim 
+	slice_str = 'sim';
+else
+	slice_str = sprintf('slice%d', slice);
+end

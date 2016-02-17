@@ -1,13 +1,15 @@
 if gen
 	exp_setup;
 else
-	slice = 67;
-	slice = 38;
+	if ~issim
+		slice = 67;
+		slice = 38;
+	end
 end
 niters = 1000;
 
 % already done 2.^(3:20);
-betas = 2.^(2:30);
+betas = 2.^(13:21);
 
 method = 'tridiag';
 %method = 'MFISTA';
@@ -35,18 +37,18 @@ for ii = 1:length(betas)
 			case 'tridiag'
 				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y, F, S, CH, CV, beta, xinit, zeros(size(SoS)), niters);
 				xhat_betas(:,:,ii) = x_tri_inf;
-				save(sprintf('reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
+				save(sprintf('./reviv/curr/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
 			case 'MFISTA' 
 				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, beta, niters);
 				xhat_betas(:,:,ii) = x_MFISTA;
-				save(sprintf('reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_MFISTA');
+				save(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x_MFISTA');
 			otherwise
 				keyboard;
 		end
 	else
 		switch method
 			case 'tridiag'
-				fname = sprintf('reviv/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta);
+				fname = sprintf('./reviv/curr/x_tri_inf_%s_beta%.*d.mat', slice_str, 3, beta);
 				if exist(fname)
 					load(fname, 'x_tri_inf');
 					xhat_betas(:,:,ii) = x_tri_inf;
@@ -54,7 +56,7 @@ for ii = 1:length(betas)
 					display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 				end
 			case 'MFISTA'
-				fname = sprintf('reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta);
+				fname = sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta);
 				if exist(fname)
 					load(fname, 'x_MFISTA');
 					xhat_betas(:,:,ii) = x_MFISTA;

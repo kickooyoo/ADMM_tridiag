@@ -11,11 +11,14 @@ arg.split = 'AL-P2'; % 'ADMM-tridiag'
 arg.author = 'ramani';
 arg.alph = 0.5; % tridiag design param
 arg.mask = true(size(SS));
-arg.fancy_mu34 = false; % for ramani, tridiag
+arg.fancy_mu34 = 100;% found to be best for slice 38 []; % for ramani, tridiag
+arg.fancy_mask = false;
 arg = vararg_pair(arg, varargin);
 
-SSmax = max(col(abs(SS(arg.mask(:)))));
-SSmin = min(col(abs(SS(arg.mask(:)))));
+SSmax = max(col(abs(SS)));
+SSmin = min(col(abs(SS)));
+SSmaxm = max(col(abs(SS(arg.mask(:)))));
+SSminm = min(col(abs(SS(arg.mask(:)))));
 if isempty(RR)
         display('what to do for noncirc tridiag?');
         RRmax = 4;
@@ -57,7 +60,7 @@ switch arg.author
                 end
                 
         case 'ramani'
-                kapx = 0.9*SSmax/SSmin;
+                kapx = 0.9*SSmaxm/SSminm;
                 kapu = 24; % condition number of (FF + mu*I)
                 kapz = 12; % condition number of (RR + nu2/n1*I)`
                 ktri = 12;
@@ -66,7 +69,7 @@ switch arg.author
                                 % mu -> mu_u
                                 % mu*nu2 -> mu_z
                                 % mu*nu1 -> mu_v
-                                nu2 = (SSmax - SSmin * kapx) / (kapx - 1);
+                                nu2 = (SSmaxm - SSminm * kapx) / (kapx - 1);
                                 mu_P2 = Nr / (kapu - 1); 
                                 nu1 = (kapz - 1) * nu2 / (RRmax - RRmin * kapz);
                                 
@@ -75,16 +78,21 @@ switch arg.author
                                 % enforce mu_0 = mu_1 for
                                 % symmetry
                                 
-                                nu2 = (SSmax - SSmin * kapx) / (kapx - 1);
+                                nu2 = (SSmaxm - SSminm * kapx) / (kapx - 1);
                                 mu_P2 = Nr / (kapu - 1);
                                 nu1 = (kapz - 1) * nu2 / (RRmax - RRmin * kapz);
                                 
                                 
                                 mu_2 = Nr / (kapu - 1);
                                 
-                                if arg.fancy_mu34
-                                        fudge = 100;
-                                        mu_0 = mu_2*(1-arg.alph).^2*SSmax*(ktri - 1)/RRmax + fudge;
+                                if ~isempty(arg.fancy_mu34)
+                                        fudge = arg.fancy_mu34; %100;
+                                        if arg.fancy_mask 
+						mu_0 = mu_2*(1-arg.alph).^2*SSmax*(ktri - 1)/RRmax + fudge.*arg.mask;
+					else
+						mu_0 = mu_2*(1-arg.alph).^2*SSmax*(ktri - 1)/RRmax + fudge;
+					end
+					 
                                         mu_1 = mu_0;
                                         mu_3 = RRmax*mu_0/(ktri - 1) - (mu_2*(1-arg.alph).^2*SS);
                                         mu_4 = RRmax*mu_1/(ktri - 1) - (mu_2*(arg.alph).^2*SS);        
@@ -106,8 +114,13 @@ switch arg.author
                                 
                                 mu = {mu_0; mu_1; mu_2; mu_3; mu_4};
                                 
-                                if any([mu_0 mu_1 mu_2] < 0) || any(col(mu_3) < 0) || any(col(mu_4) < 0)
+                                if any(col(mu_0) < 0) || any(col(mu_1)< 0) || mu_2 < 0 || any(col(mu_3) < 0) || any(col(mu_4) < 0)
                                         display('invalid negative mu');
+                                        keyboard;
+                                end
+                                
+                                if any(imag(col(mu_0)) > 0) || any(imag(col(mu_1)) > 0) ||  imag(mu_2) > 0 || any(imag(col(mu_3)) > 0) || any(imag(col(mu_4)) < 0)
+                                        display('invalid complex mu');
                                         keyboard;
                                 end
                                 

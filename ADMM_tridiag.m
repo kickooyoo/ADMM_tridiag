@@ -29,7 +29,8 @@ function [x, xsaved, err, cost, time] = ADMM_tridiag(y, F, S, CH, CV, ...
 %	debug
 %		plots all aux vars in each iteration
 %	timing (string) 'all' or 'tridiag'
-%	fancy_mu34 (boolean), uses spatially varying mu3, mu4
+%	fancy_mu34 (double), if specified, uses spatially varying mu3, mu4
+%		sets mu0 param relative to sense maps
 %	parFFT (boolean), parfor for u2 update
 %	save_progress (string) 
 %		if not empty, will save tmp file with string suffix 
@@ -58,7 +59,8 @@ arg.betaw = 0;
 arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
-arg.fancy_mu34 = false;
+arg.fancy_mu34 = [];
+arg.fancy_mask = false;
 arg.parFFT = false;
 arg.save_progress = [];
 arg.pot = [];
@@ -76,8 +78,8 @@ SS = S'*S;
 eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny); 
 
 if isempty(arg.mu)
-	arg.mu = get_mu(eig_SS, [], Nx*Ny, beta, ...
-                'split', 'ADMM-tridiag', 'alph', arg.alph, 'fancy_mu34', arg.fancy_mu34);
+	arg.mu = get_mu(eig_SS, [], Nx*Ny, beta, 'mask', arg.mask, ...
+                'split', 'ADMM-tridiag', 'alph', arg.alph, 'fancy_mu34', arg.fancy_mu34, 'fancy_mask', arg.fancy_mask);
         % do we really want to mask for mu?
 end
 
@@ -120,7 +122,12 @@ if mu0 ~= mu1
 end
 
 if isempty(arg.pot)
-	arg.pot = potential_fun('l1', beta/mu0);
+	if isscalar(mu0)
+		arg.pot = potential_fun('l1', beta/mu0);
+	else
+		arg.pot.shrink = @(x, t) sign(col(x)).*max(abs(col(x)) - col(t) ,0);
+		arg.pot.potk = @(x) abs(x);
+	end
 end
 shrink = @(a, t) arg.pot.shrink(a, t);
 calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + ...
@@ -131,18 +138,27 @@ calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + 
 % pass tridiag of C'C into mex
 Wconst = arg.betaw * arg.alphw / beta;
 WVconst = arg.betaw * (1-arg.alphw) / beta;
-subCCT = single(-mu1 * ones(Ny - 1, Nx)); % tranpose dims 
-subCC = single(-mu0 * ones(Nx - 1, Ny));
-if arg.fancy_mu34
-        diagCCT = single(mu1 * (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                reshape(mu3, Nx, Ny).' + mu1 * WVconst);
-        diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                reshape(mu4, Nx, Ny) + mu0 * Wconst);
+if arg.fancy_mask
+	subCCT = single(-mu1(:,1:end-1).' .* ones(Ny - 1, Nx)); % tranpose dims 
+	subCC = single(-mu0(1:end-1,:) .* ones(Nx - 1, Ny));
 else
-        diagCCT = single(mu1 * (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                mu3 + mu1 * WVconst);
-        diagCC = single(mu0 * (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                mu4 + mu0 * Wconst);
+	subCCT = single(-mu1 * ones(Ny - 1, Nx)); % tranpose dims 
+	subCC = single(-mu0 * ones(Nx - 1, Ny));
+end
+if ~isempty(arg.fancy_mu34)
+        diagCCT = single(mu1.' .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
+                reshape(mu3, Nx, Ny).' + mu1.' .* WVconst);
+        diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
+                reshape(mu4, Nx, Ny) + mu0 .* Wconst);
+else
+        diagCCT = single(mu1 .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
+                mu3 + mu1 .* WVconst);
+        diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
+                mu4 + mu0 .* Wconst);
+end
+if any(imag(cat(1, col(subCC), col(subCCT), col(diagCC), col(diagCCT))))
+	display('invalid diagonal values, some are imaginary');
+	keyboard;
 end
 
 % to do: make sure mex compiled
@@ -162,8 +178,8 @@ tridiag_time(1) = 0;
 %while(iter < niters)
 for iter = 1:niters
         iter_start = tic;
-        u0 = shrink(CH * x - eta0, beta/mu0);
-        u1 = shrink(CV * u3 - eta1, beta/mu1);
+        u0 = shrink(CH * x - eta0, beta./mu0);
+        u1 = shrink(CV * u3 - eta1, beta./mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny, arg.parFFT);
 	tridiag_tic = tic;
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
@@ -229,7 +245,7 @@ end
 
 function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, CV, S, u1, u2, x, ...
         v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread)
-u3arg = mu1 * CV' * (u1 + eta1) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
+u3arg = mu1(:) .* (CV' * (u1 + eta1)) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
         mu3 .* (-v3 - eta3);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
@@ -247,7 +263,7 @@ end
 
 function x = x_update(mu0, mu2, mu4, alph, eig_SS, CH, S, u0, u2, u3, v4, ...
         eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread)
-xarg = mu0 * CH' * (u0 + eta0) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
+xarg = mu0(:) .* (CH' * (u0 + eta0)) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
         mu4 .* (v4 + eta4);
 xarg = reshape(xarg, Nx, Ny);
 diagvals = diagCC + mu2 * alph^2 .* eig_SS;

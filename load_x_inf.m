@@ -17,7 +17,7 @@ end
 
 if strcmp(arg.method, 'tridiag')
 	% load xinfs
-	load(sprintf('./reviv/x_tri_inf_%d_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
+	load(sprintf('./reviv/curr/x_tri_inf_%d_beta%.*d.mat', slice_str, 3, beta), 'x_tri_inf');
 	if arg.truncate
 		x_tri_inf = reshape(x_tri_inf, 256, 144);
 		x_inf = x_tri_inf(3:end-2, 3:end-2);
@@ -26,7 +26,7 @@ if strcmp(arg.method, 'tridiag')
 	end
 	display('using tridiag ADMM as true!')
 elseif stcmp(arg.method, 'MFISTA')
-	load(sprintf('./reviv/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x*MFIS*');
+	load(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x*MFIS*');
 	if isvar('xMFIS')
 		x_MFISTA = xMFIS;
 	end
