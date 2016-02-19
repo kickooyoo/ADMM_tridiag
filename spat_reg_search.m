@@ -6,10 +6,10 @@ else
 		slice = 38;
 	end
 end
-niters = 1000;
+niters = 700;
 
 % already done 2.^(3:20);
-betas = 2.^(13:21);
+betas = 2.^(9:25);
 
 method = 'tridiag';
 %method = 'MFISTA';
@@ -52,6 +52,8 @@ for ii = 1:length(betas)
 				if exist(fname)
 					load(fname, 'x_tri_inf');
 					xhat_betas(:,:,ii) = x_tri_inf;
+					curr_img = xhat_betas(:,:,ii);
+					body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
 				else
 					display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 				end
@@ -60,14 +62,14 @@ for ii = 1:length(betas)
 				if exist(fname)
 					load(fname, 'x_MFISTA');
 					xhat_betas(:,:,ii) = x_MFISTA;
+					curr_img = xhat_betas(:,:,ii);
+					body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
 				else
 					display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 				end
 			otherwise
 				keyboard;
 		end
-		curr_img = xhat_betas(:,:,ii);
-		body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
 	end
 end
 figure; im(xhat_betas);

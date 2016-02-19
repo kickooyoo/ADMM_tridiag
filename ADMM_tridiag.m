@@ -59,11 +59,11 @@ arg.betaw = 0;
 arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
-arg.fancy_mu34 = [];
-arg.fancy_mask = false;
+arg.mu_args = {'fancy_34', 0.01, 'fancy_mask', false, 'test', '', 'ktri', 12};
 arg.parFFT = false;
 arg.save_progress = [];
-arg.pot = [];
+arg.potx = [];
+arg.poty = [];
 arg = vararg_pair(arg, varargin);
 
 if arg.parFFT
@@ -79,8 +79,8 @@ eig_SS = reshape(SS * ones(prod(S.idim),1), Nx, Ny);
 
 if isempty(arg.mu)
 	arg.mu = get_mu(eig_SS, [], Nx*Ny, beta, 'mask', arg.mask, ...
-                'split', 'ADMM-tridiag', 'alph', arg.alph, 'fancy_mu34', arg.fancy_mu34, 'fancy_mask', arg.fancy_mask);
-        % do we really want to mask for mu?
+                'split', 'ADMM-tridiag', 'alph', arg.alph, ...
+		arg.mu_args{:});
 end
 
 tic
@@ -113,43 +113,42 @@ eta4 = zeros(size(x));
 mu0 = arg.mu{1};
 mu1 = arg.mu{2};
 mu2 = arg.mu{3};
-mu3 = col(arg.mu{4});
-mu4 = col(arg.mu{5});
+mu3 = arg.mu{4};
+mu4 = arg.mu{5};
 
-if mu0 ~= mu1
-	display('using warning: otential function for mu0 everywhere');
-	keyboard
-end
-
-if isempty(arg.pot)
-	if isscalar(mu0)
-		arg.pot = potential_fun('l1', beta/mu0);
-	else
-		arg.pot.shrink = @(x, t) sign(col(x)).*max(abs(col(x)) - col(t) ,0);
-		arg.pot.potk = @(x) abs(x);
+if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
+	if ~isscalar(mu0)
+		arg.potx.shrink = @(x, t) sign(col(x)).*max(abs(col(x)) - col(t) ,0);
+		arg.potx.potk = @(x) abs(x);
+		arg.poty.shrink = @(x, t) sign(col(x)).*max(abs(col(x)) - col(t) ,0);
+		arg.poty.potk = @(x) abs(x);
+	else 	
+		arg.potx = potential_fun('l1', beta/mu0);
+		arg.poty = potential_fun('l1', beta/mu1);
 	end
 end
-shrink = @(a, t) arg.pot.shrink(a, t);
+shrinkx = @(a, t) arg.potx.shrink(a, t);
+shrinky = @(a, t) arg.poty.shrink(a, t);
 calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + ...
-        beta * sum(col(arg.pot.potk(col(CH * x)))) + beta * sum(col(arg.pot.potk(col(CV * x))));
+        beta * sum(col(arg.potx.potk(col(CH * x)))) + beta * sum(col(arg.poty.potk(col(CV * x))));
 
 [eig_FF,Qbig] = get_eigs(F,Nc);
 
 % pass tridiag of C'C into mex
 Wconst = arg.betaw * arg.alphw / beta;
 WVconst = arg.betaw * (1-arg.alphw) / beta;
-if arg.fancy_mask
+if ~isscalar(mu0) || ~isscalar(mu1);
 	subCCT = single(-mu1(:,1:end-1).' .* ones(Ny - 1, Nx)); % tranpose dims 
 	subCC = single(-mu0(1:end-1,:) .* ones(Nx - 1, Ny));
 else
 	subCCT = single(-mu1 * ones(Ny - 1, Nx)); % tranpose dims 
 	subCC = single(-mu0 * ones(Nx - 1, Ny));
 end
-if ~isempty(arg.fancy_mu34)
+if ~isscalar(mu3) || ~isscalar(mu4)
         diagCCT = single(mu1.' .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                reshape(mu3, Nx, Ny).' + mu1.' .* WVconst);
+                mu3.' + mu1.' .* WVconst);
         diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                reshape(mu4, Nx, Ny) + mu0 .* Wconst);
+                mu4+ mu0 .* Wconst);
 else
         diagCCT = single(mu1 .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
                 mu3 + mu1 .* WVconst);
@@ -178,8 +177,8 @@ tridiag_time(1) = 0;
 %while(iter < niters)
 for iter = 1:niters
         iter_start = tic;
-        u0 = shrink(CH * x - eta0, beta./mu0);
-        u1 = shrink(CV * u3 - eta1, beta./mu1);
+        u0 = shrinkx(CH * x - eta0, beta./mu0);
+        u1 = shrinky(CV * u3 - eta1, beta./mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny, arg.parFFT);
 	tridiag_tic = tic;
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
@@ -187,7 +186,7 @@ for iter = 1:niters
         tridiag_time(iter + 1) = toc(tridiag_tic);
 
         % skip v0, v1, v2 because they are constrained to be zero
-        v3 = (mu3 .* (-u3 - eta3) + mu4 .* (-x + eta4)) ./ (mu3 + mu4);
+        v3 = (mu3(:) .* (-u3 - eta3) + mu4(:) .* (-x + eta4)) ./ col(mu3 + mu4);
         v4 = -v3;
 
 	if arg.debug
@@ -246,7 +245,7 @@ end
 function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, CV, S, u1, u2, x, ...
         v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread)
 u3arg = mu1(:) .* (CV' * (u1 + eta1)) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
-        mu3 .* (-v3 - eta3);
+        mu3(:) .* (-v3 - eta3);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
 flipu3arg = reshape(u3arg, Nx, Ny);
@@ -264,7 +263,7 @@ end
 function x = x_update(mu0, mu2, mu4, alph, eig_SS, CH, S, u0, u2, u3, v4, ...
         eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread)
 xarg = mu0(:) .* (CH' * (u0 + eta0)) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
-        mu4 .* (v4 + eta4);
+        mu4(:) .* (v4 + eta4);
 xarg = reshape(xarg, Nx, Ny);
 diagvals = diagCC + mu2 * alph^2 .* eig_SS;
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));

@@ -135,7 +135,14 @@ elseif slice == 38
 		beta = 2^20;
 	end
 elseif (slice == 0) && issim
-	beta = 2^13;
+	if (reduction == 6) || (reduction == 4)
+		beta = 2^12;
+	elseif reduction == 10
+		beta = 2^14;
+	else
+		display('unknown what is best beta, choosing 2^13 arbitrarily');
+		beta = 2^13;
+	end
 else
 	display(sprintf('unknown beta for slice %d', slice));
 	keyboard;
