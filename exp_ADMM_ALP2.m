@@ -3,7 +3,7 @@
 exp_setup;
 niters = 350;
 
-x_tri_inf = load_xinf(slice, beta);
+x_tri_inf = load_x_inf(slice, beta);
 
 if wavelets 
 [xhat_alp2c, ~, nrmsd_alp2c, costOrig_alp2c, time_alp2c] = AL_P2_gen(...

@@ -311,8 +311,11 @@ for iter = 1:niters
 
 	if (mod(iter,1000) == 0) && ~isempty(arg.save_progress)
 		save(sprintf('tmp_%s', arg.save_progress), 'x');
-	end
-
+        end
+        if (any(isnan(col(x))))
+                display('getting NaNs :(');
+                keyboard
+        end
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
         cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
 end

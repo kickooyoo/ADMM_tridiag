@@ -59,7 +59,7 @@ arg.betaw = 0;
 arg.debug = false;
 arg.nthread = int32(jf('ncore'));
 arg.timing = 'all'; % 'tridiag'
-arg.mu_args = {'fancy_34', 0.01, 'fancy_mask', false, 'test', '', 'ktri', 12};
+arg.mu_args = {};
 arg.parFFT = false;
 arg.save_progress = [];
 arg.potx = [];
@@ -135,39 +135,10 @@ calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + 
 [eig_FF,Qbig] = get_eigs(F,Nc);
 
 % pass tridiag of C'C into mex
-Wconst = arg.betaw * arg.alphw / beta;
-WVconst = arg.betaw * (1-arg.alphw) / beta;
-if ~isscalar(mu0) || ~isscalar(mu1);
-	subCCT = single(-mu1(:,1:end-1).' .* ones(Ny - 1, Nx)); % tranpose dims 
-	subCC = single(-mu0(1:end-1,:) .* ones(Nx - 1, Ny));
-else
-	subCCT = single(-mu1 * ones(Ny - 1, Nx)); % tranpose dims 
-	subCC = single(-mu0 * ones(Nx - 1, Ny));
-end
-if ~isscalar(mu3) || ~isscalar(mu4)
-        diagCCT = single(mu1.' .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                mu3.' + mu1.' .* WVconst);
-        diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                mu4+ mu0 .* Wconst);
-else
-        diagCCT = single(mu1 .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                mu3 + mu1 .* WVconst);
-        diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                mu4 + mu0 .* Wconst);
-end
-if any(imag(cat(1, col(subCC), col(subCCT), col(diagCC), col(diagCCT))))
-	display('invalid diagonal values, some are imaginary');
-	keyboard;
-end
+[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu3, mu4, Nx, Ny, beta);
 
-% to do: make sure mex compiled
 if arg.compile_mex
-        curr = cd;
-        if ~strcmp(curr(end-11:end), 'ADMM_tridiag')
-                display('must be in ADMM_tridiag dir to compile tridiag_inv_mex_noni.c');
-                keyboard;
-        end
-        mex -O CFLAGS="\$CFLAGS -std=c99 -DMmex" -I./pthread_tutor/def/ ./pthread_tutor/tridiag_inv_mex_noni.c
+        confirm_compile('tridiag_inv_mex_noni');
 end
 
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
@@ -179,10 +150,10 @@ for iter = 1:niters
         iter_start = tic;
         u0 = shrinkx(CH * x - eta0, beta./mu0);
         u1 = shrinky(CV * u3 - eta1, beta./mu1);
-        u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, Nx, Ny, arg.parFFT);
+        u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, arg.parFFT);
 	tridiag_tic = tic;
-        u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, arg.nthread);
-        x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, Nx, Ny, subCC, diagCC, arg.nthread);
+        u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, subCCT, diagCCT, arg.nthread);
+        x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, subCC, diagCC, arg.nthread);
         tridiag_time(iter + 1) = toc(tridiag_tic);
 
         % skip v0, v1, v2 because they are constrained to be zero
@@ -225,7 +196,7 @@ if strcmp(arg.timing, 'tridiag')
 end
 end
 
-function u2 = u2_update(mu2, alph, eig_FF, Q, F, S, y, u3, x, eta2, Nx, Ny, par)
+function u2 = u2_update(mu2, alph, eig_FF, Q, F, S, y, u3, x, eta2, par)
 arg_u2 = F' * y + mu2 * ((1-alph) * S * u3 + alph * S * x - eta2);
 if par
         arg_u2 = reshape(arg_u2, F.arg.Nx, F.arg.Ny, F.arg.Nc);
@@ -238,17 +209,17 @@ if par
         end
         u2 = col(u2);
 else
-        u2 = Q' * ((Q * arg_u2) ./ (eig_FF + mu2)) / (Nx * Ny);
+        u2 = Q' * ((Q * arg_u2) ./ (eig_FF + mu2)) / (F.arg.Nx * F.arg.Ny);
 end
 end
 
 function u3 = u3_update_mex(mu1, mu2, mu3, alph, eig_SS, CV, S, u1, u2, x, ...
-        v3, eta1, eta2, eta3, Nx, Ny, subCCT, diagCCT, nthread)
+        v3, eta1, eta2, eta3, subCCT, diagCCT, nthread)
 u3arg = mu1(:) .* (CV' * (u1 + eta1)) + mu2 * (1-alph) * S' * (u2 - alph * S * x + eta2) + ...
         mu3(:) .* (-v3 - eta3);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
-flipu3arg = reshape(u3arg, Nx, Ny);
+flipu3arg = reshape(u3arg, S.arg.Nx, S.arg.Ny);
 flipu3arg = flipu3arg.';
 flipSS = eig_SS.';
 
@@ -256,15 +227,15 @@ diagvals = diagCCT + mu2 * (1-alph)^2 * flipSS;
 u3out = tridiag_inv_mex_noni(subCCT, diagvals, subCCT, flipu3arg, nthread);
 
 % transpose solution back
-flipu3 = reshape(u3out, Ny, Nx); 
+flipu3 = reshape(u3out, S.arg.Ny, S.arg.Nx); 
 u3 = col(flipu3.');
 end
 
 function x = x_update(mu0, mu2, mu4, alph, eig_SS, CH, S, u0, u2, u3, v4, ...
-        eta0, eta2, eta4, Nx, Ny, subCC, diagCC, nthread)
+        eta0, eta2, eta4, subCC, diagCC, nthread)
 xarg = mu0(:) .* (CH' * (u0 + eta0)) + mu2 * alph * S' * (u2 - (1-alph) * S * u3 + eta2) + ...
         mu4(:) .* (v4 + eta4);
-xarg = reshape(xarg, Nx, Ny);
+xarg = reshape(xarg, S.arg.Nx, S.arg.Ny);
 diagvals = diagCC + mu2 * alph^2 .* eig_SS;
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
 end

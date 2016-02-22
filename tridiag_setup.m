@@ -48,7 +48,7 @@ switch machine(1:end-1) % last char is some sort of new line
 	addpath('/Users/mai/Documents/irt/reproduce/ramani-12-asb/2011-12-19');
 	addpath('/Users/mai/Documents/contrib/ramani_MFISTA');
 	home_path = '/Users/mai/';
-	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
+	db_path = '~/Dropbox/fessler/experimental_data/tridiag_vega/';
     otherwise
         display('unknown machine');
 end

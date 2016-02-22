@@ -61,7 +61,7 @@ R = [C1; C2];
 %         alph, beta, xinit, img, niters, 'pot', pot, 'fancy_mu', 1); 
 
 [xhat_tri, xsaved_tri, cost_tri] = ADMM_tridiag(noisey, F, S, C1, C2, ...
-        alph, beta, xinit, img, niters, 'fancy_mu', 1);
+        beta, xinit, img, niters, 'mu_args', {'fancy_mu34', true, 'test', 'edgeRRapproxcheck'});
 
 figure; subplot(2,2,1); im(xinit); subplot(2,2,2); im(xhat_bs); subplot(2,2,3); im(xhat_P2); subplot(2,2,4); im(xhat_tri)
 calc_NRMSE_over_mask(xhat_bs, xhat_tri, true(nx,ny))

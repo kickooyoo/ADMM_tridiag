@@ -6,7 +6,7 @@ function x_inf = load_xinf(slice, beta, varargin)
 %	method (string) 'MFISTA' (default) or 'tridiag'
 
 arg.truncate = 0;
-arg.method = MFISTA;
+arg.method = 'MFISTA';
 arg = vararg_pair(arg, varargin);
 
 if slice == 0
@@ -25,7 +25,7 @@ if strcmp(arg.method, 'tridiag')
 		x_inf = x_tri_inf;
 	end
 	display('using tridiag ADMM as true!')
-elseif stcmp(arg.method, 'MFISTA')
+elseif strcmp(arg.method, 'MFISTA')
 	load(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x*MFIS*');
 	if isvar('xMFIS')
 		x_MFISTA = xMFIS;
