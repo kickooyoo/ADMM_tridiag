@@ -9,7 +9,7 @@ if ~isvar('FontSize')
 	FontSize = 12;
 end
 
-y_val = 'costOrig'; %'nrmsd'; %'costOrig'
+y_val = 'nrmsd'; %'nrmsd'; %'costOrig'
 
 fhandle = figure('Position', [100 100 400 300]); hold on; 
 legend_str = {};
@@ -19,21 +19,19 @@ for ii = 1:length(exps)
 	suffix = curr_name(suffix_ndx + 1 : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
 		Nd = eval(sprintf('size(%s, 2)', curr_name));
-		colm = true;
 	else
 		Nd = 1;
-		colm = false;
+	end
+	if eval(sprintf('size(%s, 1) == niters + 1', curr_name))
+		indeces = 'start_ndx:end_ndx,jj';
+	else
+		indeces = 'jj,start_ndx:end_ndx';
 	end
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
-		if colm
-			eval(sprintf('plot(cumsum(%s(jj,start_ndx:end_ndx)), xform(%s_%s(jj,start_ndx:end_ndx)), ''%s%s'')', curr_name, y_val, suffix, curr_color, curr_marker));
-			legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
-		else
-			eval(sprintf('plot(cumsum(%s(:,start_ndx:end_ndx)), xform(%s_%s(:,start_ndx:end_ndx)), ''%s'')', curr_name, y_val, suffix, curr_color));
-			legend_str = [legend_str; sprintf('%s', suffix)];
-		end
+		eval(sprintf('plot(cumsum(%s(%s)), xform(%s_%s(%s)), ''%s%s'')', curr_name, indeces, y_val, suffix, indeces, curr_color, curr_marker));
+		legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
 		hold on; 
 	end
 end
@@ -51,21 +49,19 @@ for ii = 1:length(exps)
 	suffix = curr_name(suffix_ndx + 1 : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
 		Nd = eval(sprintf('size(%s, 2)', curr_name));
-		colm = true;
 	else
 		Nd = 1;
-		colm = false;
+	end
+	if eval(sprintf('size(%s, 1) == niters + 1', curr_name))
+		indeces = 'start_ndx:end_ndx,jj';
+	else
+		indeces = 'jj,start_ndx:end_ndx';
 	end
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
-		if colm
-			eval(sprintf('plot(xform(%s_%s(jj,start_ndx:end_ndx)), ''%s%s'')', y_val, suffix, curr_color, curr_marker));
-			legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
-		else
-			eval(sprintf('plot(xform(%s_%s(:,start_ndx:end_ndx)), ''%s'')', y_val, suffix, curr_color));
-			legend_str = [legend_str; sprintf('%s', suffix)];
-		end
+		eval(sprintf('plot(xform(%s_%s(%s)), ''%s%s'')', y_val, suffix, indeces, curr_color, curr_marker));
+		legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
 		hold on; 
         end
 end
