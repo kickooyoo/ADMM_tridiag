@@ -67,6 +67,7 @@ arg.potx = [];
 arg.poty = [];
 arg.attempt_par = 0;
 arg.pmethod = 'feval'; %'pfor'; % or 'spmd' or 'feval'
+arg.prof = 0;
 arg = vararg_pair(arg, varargin);
 
 % eigvals for SS, get mus
@@ -163,7 +164,9 @@ end
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
 time(1) = toc;
-
+if arg.prof
+        profile on
+end
 for iter = 1:niters
         iter_start = tic;
         if (arg.attempt_par)
@@ -227,6 +230,9 @@ for iter = 1:niters
                 x = x_update(mu1, mu6, mu8, arg.alph, eig_SS, CH, S, v1, ...
                         v6, v8, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
         end
+        AWy1 = mu4 * (-u2 - eta4) + mu6 *(-arg.alph * S * x + eta6);
+        AWy2 = mu5 * ((1-arg.alph) * S * u3 - eta5) + mu6 * (-arg.alph * S * x + eta6);
+        v45det = (mu4 + mu6) * (mu5 + mu6) - mu6.^2;
         if (arg.attempt_par)
                 if strcmp(arg.pmethod,'pfor')
                         parfor vi = 0:4
@@ -281,8 +287,8 @@ for iter = 1:niters
         else % not parallel
                 v0 = v0_update(mu0, mu1, u0, eta0, CH, x, eta1);
                 v2 = v2_update(mu2, mu3, u1, eta2, CV, u3, eta3);
-                v4 = v4_update(u2, u3, x, arg.alph, S, eta4, eta5, eta6, mu4, mu5, mu6);
-                v5 = v5_update(u2, u3, x, arg.alph, S, eta4, eta5, eta6, mu4, mu5, mu6);
+                v4 = v4_update(AWy1, AWy2, v45det, mu5, mu6);
+                v5 = v5_update(AWy1, AWy2, v45det, mu4, mu6);
                 v7 = v7_update(mu7, mu8, u3, eta7, x, eta8);
         end
         v1 = -v0;
@@ -320,7 +326,10 @@ for iter = 1:niters
         cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
 end
 x = reshape(x, Nx, Ny);
-keyboard
+if arg.prof
+        profile viewer
+        keyboard
+end
 
 if(arg.attempt_par)
         matlabpool close
@@ -385,17 +394,13 @@ function v2 = v2_update(mu2, mu3, u1, eta2, CV, u3, eta3)
 v2 = (mu2 * (-u1 - eta2) + mu3 * (- (CV * u3) + eta3)) / (mu2 + mu3);
 end
 
-function v4 = v4_update(u2,u3,x,alph,S,eta4,eta5,eta6,mu4, mu5, mu6)
-v4 = (mu5 + mu6) * (mu4 * (-u2 - eta4) + mu6 * (-alph * S * x + eta6)) + ...
-        - mu6 * (mu5 * ((1-alph) * S * u3 - eta5) + mu6 * (-alph * S * x + eta6));
-det = (mu4 + mu6) * (mu5 + mu6) - mu6.^2;
+function v4 = v4_update(AWy1, AWy2, det, mu5, mu6)
+v4 = (mu5 + mu6) * AWy1 - mu6 * AWy2;
 v4 = v4/det;
 end
 
-function v5 = v5_update(u2,u3,x,alph,S,eta4,eta5,eta6,mu4, mu5, mu6,v4);
-v5 = - mu6 * (mu4 * (-u2 - eta4) + mu6 * (-alph * S * x + eta6)) + ...
-         (mu4 + mu6) * (mu5 * ((1-alph) * S * u3 - eta5) + mu6 * (-alph * S * x + eta6));
-det = (mu4 + mu6) * (mu5 + mu6) - mu6.^2;
+function v5 = v5_update(AWy1, AWy2, det, mu4, mu6)
+v5 = - mu6 * AWy1 + (mu4 + mu6) * AWy2;
 v5 = v5/det;
 end
 
