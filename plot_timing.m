@@ -18,7 +18,7 @@ for ii = 1:length(exps)
 	suffix_ndx = strfind(curr_name, '_');
 	suffix = curr_name(suffix_ndx + 1 : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
-		Nd = eval(sprintf('size(%s, 2)', curr_name));
+		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
 	else
 		Nd = 1;
 	end
@@ -48,7 +48,7 @@ for ii = 1:length(exps)
 	suffix_ndx = strfind(curr_name, '_');
 	suffix = curr_name(suffix_ndx + 1 : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
-		Nd = eval(sprintf('size(%s, 2)', curr_name));
+		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
 	else
 		Nd = 1;
 	end
