@@ -12,9 +12,9 @@ end
 fudges = 10.^(-2:0.5:4);
 clear nrmsd*
 clear time*
-for ii = 1:length(ktris)
+for ii = 1:length(fudges)
         fudge = fudges(ii);
-	[x, xsaved, err, cost, time] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', {'mu0_fudge', fudge});
+	[x_FP(:,:,ii), ~, nrmsd_FP(ii,:), costOrig_FP(ii,:), time_FP(ii,:)] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', {'mu0_fudge', fudge});
 end
 
 save(sprintf('./reviv/curr/mu_sweep_FP_MFISTAinf_%dx%d_%diter_%s%s.mat', ...

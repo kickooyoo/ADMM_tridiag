@@ -16,7 +16,7 @@ legend_str = {};
 for ii = 1:length(exps)
 	curr_name = exps{ii};
 	suffix_ndx = strfind(curr_name, '_');
-	suffix = curr_name(suffix_ndx + 1 : end);
+	suffix = curr_name(suffix_ndx : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
 		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
 	else
@@ -30,7 +30,7 @@ for ii = 1:length(exps)
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
-		eval(sprintf('plot(cumsum(%s(%s)), xform(%s_%s(%s)), ''%s%s'')', curr_name, indeces, y_val, suffix, indeces, curr_color, curr_marker));
+		eval(sprintf('plot(cumsum(%s(%s)), xform(%s%s(%s)), ''%s%s'')', curr_name, indeces, y_val, suffix, indeces, curr_color, curr_marker));
 		legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
 		hold on; 
 	end
@@ -46,7 +46,7 @@ legend_str = {};
 for ii = 1:length(exps)
 	curr_name = exps{ii};
 	suffix_ndx = strfind(curr_name, '_');
-	suffix = curr_name(suffix_ndx + 1 : end);
+	suffix = curr_name(suffix_ndx : end);
 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
 		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
 	else
@@ -60,7 +60,7 @@ for ii = 1:length(exps)
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
-		eval(sprintf('plot(xform(%s_%s(%s)), ''%s%s'')', y_val, suffix, indeces, curr_color, curr_marker));
+		eval(sprintf('plot(xform(%s%s(%s)), ''%s%s'')', y_val, suffix, indeces, curr_color, curr_marker));
 		legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
 		hold on; 
         end

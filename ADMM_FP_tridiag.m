@@ -68,6 +68,8 @@ arg.poty = [];
 arg.attempt_par = 0;
 arg.pmethod = 'feval'; %'pfor'; % or 'spmd' or 'feval'
 arg.prof = 0;
+arg.timing = false;
+arg.warmup = 0; %5; % number of warmup iters
 arg = vararg_pair(arg, varargin);
 
 % eigvals for SS, get mus
@@ -93,30 +95,9 @@ if ~strcmp(class(arg.nthread), 'int32')
         arg.nthread = int32(arg.nthread);
 end
 
-x = single(xinit(:));
 y = single(y);
-u0 = CH*x;
-u3 = x;
-u1 = CV*u3;
-u2 = (1-arg.alph)*S*u3+arg.alph*S*x;
-v0 = zeros(size(u0));
-v1 = v0;
-v2 = zeros(size(u1));
-v3 = v2;
-v4 = zeros(size(u2));
-v5 = v4;
-v6 = v4;
-v7 = zeros(size(u3));
-v8 = v7;
-eta0 = zeros(size(v0));
-eta1 = zeros(size(v1));
-eta2 = zeros(size(v2));
-eta3 = zeros(size(v3));
-eta4 = zeros(size(v4));
-eta5 = zeros(size(v5));
-eta6 = zeros(size(v6));
-eta7 = zeros(size(v7));
-eta8 = zeros(size(v8));
+[x, u0, u1, u2, u3, v0, v2, v4, v5, v7, eta0, eta1, eta2, eta3, ...
+        eta4, eta5, eta6, eta7, eta8] = init_vars(xinit, CH, CV, S, arg.alph);
 mu0 = arg.mu{1};
 mu1 = arg.mu{2};
 mu2 = arg.mu{3};
@@ -140,8 +121,6 @@ if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
 end
 shrinkx = @(a, t) arg.potx.shrink(a, t);
 shrinky = @(a, t) arg.poty.shrink(a, t);
-calc_cost = @(beta, CH, CV, F, S, y, x) norm(col(y) - col(F * (S * x)),2)^2/2 + ...
-        beta * sum(col(arg.potx.potk(col(CH * x)))) + beta * sum(col(arg.poty.potk(col(CV * x))));
 
 [eig_FF, Qbig] = get_eigs(F, Nc);
 
@@ -157,81 +136,116 @@ if(arg.attempt_par)
         %matlabpool('open',Ncore);
         %		pool = parpool(Ncore); % only in 2013b
         %		en
-        Ncore = 4;
-        pool = parpool(Ncore); % only in 2013b
+        pool = gcp('nocreate');
+        if numel(pool) == 0
+                pool = parpool();
+        end
 end
 
 err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
-cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
+cost(1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
 time(1) = toc;
 if arg.prof
         profile on
 end
+warmup_iter = 0;
 for iter = 1:niters
         iter_start = tic;
-%         if (arg.attempt_par)
-%                 if strcmp(arg.pmethod,'pfor')
-%                         parfor ui = 0:4
-%                                 switch ui
-%                                         case 0
-%                                                 %u0 = soft(-v0-eta0,beta/mu(1)); %mu0
-%                                                 u0 = u0_update(v0, eta0, beta, mu(1));
-%                                         case 1
-%                                                 %u1 = soft(-v2-eta2,beta/mu(3));
-%                                                 u1 = u1_update(v2, eta2, beta, mu(3));
-%                                         case 2
-%                                                 u2 = u2_update(mu4, eig_FF, Qbig, F, y, v4, eta4);
-%                                         case 3
-%                                                 u3 = u3_update(mu,arg.alph,eig_SS,CH,CV,S,v3,v5,v7,eta3,eta5,eta7,Nx,Ny);
-%                                         case 4
-%                                                 x = x_update(mu,arg.alph,eig_SS,CH,S,v1,v6,v8,eta1,eta6,eta8,Nx,Ny);
-%                                         otherwise
-%                                                 display('no such case for ui loop');
-%                                 end
-%                         end
-%                 elseif strcmp(arg.pmethod,'spmd');
-%                         spmd;
-%                                 if labindex == 1
-%                                         u0 = u0_update(v0,eta0,beta,mu(1));
-%                                 elseif labindex == 2
-%                                         u1 = u1_update(v2,eta2,beta,mu(3));
-%                                 elseif labindex == 3
-%                                         u2 = u2_update(mu4, eig_FF, Qbig, F, y, v4, eta4);
-%                                 elseif labindex == 4
-%                                         u3 = u3_update(mu,arg.alph,eig_SS,CH,CV,S,v3,v5,v7,eta3,eta5,eta7,Nx,Ny);
-%                                 elseif labindex == 5
-%                                         x = x_update(mu,arg.alph,eig_SS,CH,S,v1,v6,v8,eta1,eta6,eta8,Nx,Ny);
-%                                 end
-%                         end
-%                         % extract vectors from composites
-%                         u0 = u0{1};
-%                         u1 = u1{2};
-%                         u2 = u2{3};
-%                         u3 = u3{4};
-%                         % x
-%                 elseif strcmp(arg.pmethod,'feval')
-%                         u0 = parfeval(pool,@u0_update, 1, v0, eta0, beta, mu0);
-%                         u1 = parfeval(pool,@u1_update, 1, v2, eta2, beta, mu2);
-%                         u2 = parfeval(pool,@u2_update,1,mu4, eig_FF, Qbig, F, y, v4, eta4);
-%                         u3 = parfeval(pool,@u3_update,1,mu,arg.alph,eig_SS,CH,CV,S,v3,v5,v7,eta3,eta5,eta7,Nx,Ny);
-%                         x = parfeval(pool,@x_update,1,mu,arg.alph,eig_SS,CH,S,v1,v6,v8,eta1,eta6,eta8,Nx,Ny);
-%                         u0 = fetchOutputs(u0);
-%                         u1 = fetchOutputs(u1);
-%                         u2 = fetchOutputs(u2);
-%                         u3 = fetchOutputs(u3);
-%                         x = fetchOutputs(x);
-%                 end
-%         else %not parallel
+        if arg.timing, u_start = tic; end
+        if (arg.attempt_par)
+                u_start = tic;
+                if strcmp(arg.pmethod,'pfor')
+                        parfor ui = 0:4
+                                switch ui
+                                        case 0
+                                                %u0 = soft(-v0-eta0,beta/mu(1)); %mu0
+                                                u0 = u0_update(v0, eta0, beta, mu0, arg.potx);
+                                        case 1
+                                                %u1 = soft(-v2-eta2,beta/mu(3));
+                                                u1 = u1_update(v2, eta2, beta, mu2, arg.poty);
+                                        case 2
+                                                u2 = u2_update(mu4, eig_FF, Qbig, F, y, v4, eta4);
+                                        case 3
+                                                u3 = u3_update(mu3, mu5, mu7, arg.alph, eig_SS, CV, S, -v2, ...
+                                                        v5, v7, eta3, eta5, eta7, subCCT, diagCCT, arg.nthread);
+                                        case 4
+                                                x = x_update(mu1, mu6, mu8, arg.alph, eig_SS, CH, S, -v0, ...
+                                                        -v4 - v5, -v7, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
+                                        otherwise
+                                                display('no such case for ui loop');
+                                end
+                        end
+                elseif strcmp(arg.pmethod,'spmd');
+                        if pool.NumWorkers < 4
+                                display('not enough workers in pool, use another pmethod');
+                                keyboard;
+                        end
+                        spmd;
+                                bigu = update_u(labindex, v0, v2, v4, v5, ...
+                                        v7, mu0, mu1, mu2, mu3, mu4, mu5, ...
+                                        mu6, mu7, mu8, eta0, eta1, eta2, ...
+                                        eta3, eta4, eta5, eta6, eta7, eta8, ...
+                                        beta, subCC, subCCT, ...
+                                        diagCC, diagCCT, ...
+                                        CH, CV, S, eig_FF, eig_SS, F, Qbig, y, arg);
+
+                        end
+                        % extract vectors from composites
+                        tmp = bigu{1};
+                        u0 = tmp.H;
+                        u1 = tmp.V;
+                        u2 = bigu{2};
+                        u3 = bigu{3};
+                        x = bigu{4};
+                elseif strcmp(arg.pmethod,'feval')
+                        u0 = parfeval(pool,@u0_update, 1, v0, eta0, beta, mu0, arg.potx);
+                        u1 = parfeval(pool,@u1_update, 1, v2, eta2, beta, mu2, arg.poty);
+                        u2 = parfeval(pool,@u2_update,1, mu4, eig_FF, Qbig, F, y, v4, eta4);
+                        u3 = parfeval(pool,@u3_update,1, mu3, mu5, mu7, arg.alph, eig_SS, CV, S, -v2, ...
+                                v5, v7, eta3, eta5, eta7, subCCT, diagCCT, arg.nthread);
+                        x = parfeval(pool,@x_update,1,mu1, mu6, mu8, arg.alph, eig_SS, CH, S, -v0, ...
+                                -v4 - v5, -v7, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
+                        u0 = fetchOutputs(u0);
+                        u1 = fetchOutputs(u1);
+                        u2 = fetchOutputs(u2);
+                        u3 = fetchOutputs(u3);
+                        x = fetchOutputs(x);
+                end
+                u_times(iter) = toc(u_start);
+        else 
+                if arg.timing, u_start = tic; end
                 u0 = u0_update(v0, eta0, beta, mu0, arg.potx);
+                if arg.timing
+                        u_times(iter, 1) = toc(u_start);
+                        u_start = tic;
+                end
                 u1 = u1_update(v2, eta2, beta, mu2, arg.poty);
+                if arg.timing
+                        u_times(iter, 2) = toc(u_start);
+                        u_start = tic;
+                end
                 u2 = u2_update(mu4, eig_FF, Qbig, F, y, v4, eta4);
-                u3 = u3_update(mu3, mu5, mu7, arg.alph, eig_SS, CV, S, v3, ...
+                if arg.timing
+                        u_times(iter, 3) = toc(u_start);
+                        u_start = tic;
+                end
+                u3 = u3_update(mu3, mu5, mu7, arg.alph, eig_SS, CV, S, -v2, ...
                         v5, v7, eta3, eta5, eta7, subCCT, diagCCT, arg.nthread);
-                x = x_update(mu1, mu6, mu8, arg.alph, eig_SS, CH, S, v1, ...
-                        v6, v8, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
-%         end
-        AWy1 = mu4 * (-u2 - eta4) + mu6 *(-arg.alph * S * x + eta6);
-        AWy2 = mu5 * ((1-arg.alph) * S * u3 - eta5) + mu6 * (-arg.alph * S * x + eta6);
+                if arg.timing
+                        u_times(iter, 4) = toc(u_start);
+                        u_start = tic;
+                end
+                x = x_update(mu1, mu6, mu8, arg.alph, eig_SS, CH, S, -v0, ...
+                        -v4 - v5, -v7, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
+                if arg.timing
+                        u_times(iter, 5) = toc(u_start);
+                end
+        end
+        if arg. timing, v_start = tic; end
+        Sx = S * x;
+        Su3 = S * u3;
+        AWy1 = mu4 * (-u2 - eta4) + mu6 *(-arg.alph * Sx + eta6);
+        AWy2 = mu5 * ((1-arg.alph) * Su3 - eta5) + mu6 * (-arg.alph * Sx + eta6);
         v45det = (mu4 + mu6) * (mu5 + mu6) - mu6.^2;
 %         if (arg.attempt_par)
 %                 if strcmp(arg.pmethod,'pfor')
@@ -291,22 +305,27 @@ for iter = 1:niters
                 v5 = v5_update(AWy1, AWy2, v45det, mu4, mu6);
                 v7 = v7_update(mu7, mu8, u3, eta7, x, eta8);
 %         end
-        v1 = -v0;
-        v3 = -v2;
-        v6 = -v4 - v5;
-        v8 = -v7;
-        
+%         v1 = -v0;
+%         v3 = -v2;
+%         v6 = -v4 - v5;
+%         v8 = -v7;
+        if arg.timing
+                v_times(iter) = toc(v_start);
+                eta_start = tic;
+        end
         % 	eta updates
         %	eta  = eta - (Au-v)
+        
         eta0 = eta0 - (-u0 - v0);
-        eta1 = eta1 - (CH * x - v1);
+        eta1 = eta1 - (CH * x - (-v0));
         eta2 = eta2 - (-u1 - v2);
-        eta3 = eta3 - (CV * u3 - v3);
+        eta3 = eta3 - (CV * u3 - (-v2));
         eta4 = eta4 - (-u2 - v4);
-        eta5 = eta5 - ((1-arg.alph) * S * u3 - v5);
-        eta6 = eta6 - (arg.alph * S * x - v6);
+        eta5 = eta5 - ((1-arg.alph) * Su3 - v5);
+        eta6 = eta6 - (arg.alph * Sx - (-v4 -v5));
         eta7 = eta7 - (-u3 - v7);
-        eta8 = eta8 - (x - v8);
+        eta8 = eta8 - (x - (-v7));
+        if arg.timing, eta_times(iter) = toc(eta_start); end
         
         time(iter + 1) = toc(iter_start);
 	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
@@ -318,27 +337,81 @@ for iter = 1:niters
 	if (mod(iter,1000) == 0) && ~isempty(arg.save_progress)
 		save(sprintf('tmp_%s', arg.save_progress), 'x');
         end
-        if (any(isnan(col(x))))
+        if (any(isnan(col(x))))m
                 display('getting NaNs :(');
                 keyboard
         end
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
-        cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
+        cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
+        if warmup_iter < arg.warmup
+                iter = 1;
+                [x, u0, u1, u2, u3, v0, v2, v4, v5, v7, eta0, eta1, eta2, ...
+                        eta3, eta4, eta5, eta6, eta7, eta8] = init_vars(...
+                        xinit, CH, CV, S, arg.alph);
+                warmup_iter = warmup_iter + 1;
+                display('warm up iter!')
+        end
 end
 x = reshape(x, Nx, Ny);
 if arg.prof
         profile viewer
-        keyboard
-end
-
-if(arg.attempt_par)
-        matlabpool close
 end
 
 end
 
-function cost = calc_cost(beta, CH, CV, F, S, y, x)
-cost = norm(col(y-F*(S*x)),2)^2/2 + beta*norm(col(CH*x),1) + beta*norm(col(CV*x),1);
+function [x, u0, u1, u2, u3, v0, v2, v4, v5, v7, eta0, eta1, eta2, eta3, ...
+        eta4, eta5, eta6, eta7, eta8] = init_vars(xinit, CH, CV, S, alph);
+x = single(xinit(:));
+u0 = CH*x;
+u3 = x;
+u1 = CV*u3;
+u2 = (1-alph) * S * u3 + alph * S * x;
+v0 = zeros(size(u0));
+% v1 = v0;
+v2 = zeros(size(u1));
+% v3 = v2;
+v4 = zeros(size(u2));
+v5 = v4;
+% v6 = v4;
+v7 = zeros(size(u3));
+% v8 = v7;
+eta0 = zeros(size(v0));
+eta1 = zeros(size(v0));
+eta2 = zeros(size(v2));
+eta3 = zeros(size(v2));
+eta4 = zeros(size(v4));
+eta5 = zeros(size(v5));
+eta6 = zeros(size(v4));
+eta7 = zeros(size(v7));
+eta8 = zeros(size(v7));
+end
+
+function u = update_u(labindex, v0, v2, v4, v5, v7, mu0, mu1, mu2, ...
+        mu3, mu4, mu5, mu6, mu7, mu8, eta0, eta1, eta2, eta3, eta4, eta5, ...
+        eta6, eta7, eta8, beta, subCC, subCCT, diagCC, diagCCT, CH, CV, S, ...
+        eig_FF, eig_SS, F, Qbig, y, arg)
+switch labindex
+        case 1
+                u.H = u0_update(v0, eta0, beta, mu0, arg.potx);
+                u.V = u1_update(v2, eta2, beta, mu2, arg.poty);
+        case 2
+                u = u2_update(mu4, eig_FF, Qbig, F, y, v4, eta4);
+        case 3
+                u = u3_update(mu3, mu5, mu7, arg.alph, eig_SS, CV, S, -v2, ...
+                        v5, v7, eta3, eta5, eta7, subCCT, diagCCT, arg.nthread);
+        case 4
+                u = x_update(mu1, mu6, mu8, arg.alph, eig_SS, CH, S, -v0, ...
+                        -v4 - v5, -v7, eta1, eta6, eta8, subCC, diagCC, arg.nthread);
+        otherwise
+                display('invalid labindex');
+                keyboard;
+end
+end
+
+function cost = calc_cost(beta, CH, CV, F, S, y, x, arg)
+cost = norm(col(y) - col(F * (S * x)),2)^2/2 + ...
+        beta * sum(col(arg.potx.potk(col(CH * x)))) + ...
+        beta * sum(col(arg.poty.potk(col(CV * x))));
 end
 
 function out = soft(in,thresh)
