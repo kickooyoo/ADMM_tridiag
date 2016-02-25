@@ -1,7 +1,7 @@
 issim = 0;
 exp_setup;
 xtrue = load_x_inf(slice, beta);
-niters = 100;
+niters = 30;
 
 [x_pfor, ~, nrmsd_pfor, ~, time_pfor] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, ...
         xtrue, niters, 'attempt_par', true, 'pmethod', 'pfor');
