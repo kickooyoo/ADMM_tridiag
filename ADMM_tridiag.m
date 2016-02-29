@@ -176,8 +176,8 @@ for iter = 1:niters
         eta3 = eta3 - (-u3 - v3);
         eta4 = eta4 - (x - v4);
         
-        time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+        time(iter + 1, 1) = toc(iter_start);
+	err(iter + 1, 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)
@@ -188,7 +188,7 @@ for iter = 1:niters
 	end
 
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
-        cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x);
+        cost(iter + 1, 1) = calc_cost(beta, CH, CV, F, S, y, x);
 end
 x = reshape(x, Nx, Ny);
 if strcmp(arg.timing, 'tridiag')

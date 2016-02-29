@@ -10,18 +10,21 @@ if ~isvar('save_suffix')
 	save_suffix = '';
 end
 fudges = 10.^(-2:0.5:4);
+ktris = 1:10;
 clear nrmsd*
 clear time*
 for ii = 1:length(fudges)
-        fudge = fudges(ii);
-	[x_FP(:,:,ii), ~, nrmsd_FP(ii,:), costOrig_FP(ii,:), time_FP(ii,:)] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', {'mu0_fudge', fudge});
+	for jj = 1:length(ktris)
+		fudge = fudges(ii);
+		ktri = ktris(jj);
+		[x_FP(:,:,ii,jj), ~, nrmsd_FP(ii,jj,:), costOrig_FP(ii,jj,:), time_FP(ii,jj,:)] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', {'mu0_fudge', fudge, 'ktri', ktri});
+	end
 end
 
-save(sprintf('./reviv/curr/mu_sweep_FP_MFISTAinf_%dx%d_%diter_%s%s.mat', ...
-	Nx, Ny, niters, slice_str, save_suffix));
+save(sprintf('./reviv/curr/%s_mu_sweep_FP_MFISTAinf_%dx%d_%diter_%s%s.mat', ...
+	machine(1:3), Nx, Ny, niters, slice_str, save_suffix));
 send_mai_text('done with fancy mu exp timing');
 
-plot_timing;
 
 display('DONE');
 

@@ -18,6 +18,7 @@ arg.ktri = 12;
 arg.kapu_tri = 24;
 arg.CH = [];
 arg.CV = [];
+arg.set_FP = [];
 arg = vararg_pair(arg, varargin);
 
 SSmax = max(col(abs(SS)));
@@ -134,17 +135,20 @@ switch arg.split
                 mu_0 = lambda/mean([arg.edge arg.noise]);
                 mu_2 = mu_0;                
                 mu_4 = Nr / (arg.kapu_tri - 1);
-                
-                mu_3 = mu_0;
-                c3 = mu_3 * RRmaxy / arg.ktri;
-                mu_5 = min(mu_4, c3/((1-arg.alph).^2* SSmax));
-                mu_7 = c3 - mu_5 * (1-arg.alph).^2 * SS + arg.mu0_fudge; 
-                
-                mu_1 = mu_0;
-                cx = mu_1 * RRmaxx / arg.ktri;
-                mu_6 = min(mu_4, cx/(arg.alph.^2* SSmax));
-                mu_8 = cx - mu_6 * arg.alph.^2 * SS + arg.mu0_fudge; 
-                
+               	if isempty(arg.set_FP) 
+			mu_3 = mu_0;
+			c3 = mu_3 * RRmaxy / arg.ktri;
+			mu_5 = min(mu_4, c3/((1-arg.alph).^2* SSmax));
+			mu_7 = c3 - mu_5 * (1-arg.alph).^2 * SS + arg.mu0_fudge; 
+			
+			mu_1 = mu_0;
+			cx = mu_1 * RRmaxx / arg.ktri;
+			mu_6 = min(mu_4, cx/(arg.alph.^2* SSmax));
+			mu_8 = cx - mu_6 * arg.alph.^2 * SS + arg.mu0_fudge; 
+		else
+			mu_0 = arg.set_FP(1);
+			keyboard;	
+		end
                 if any(cat(1, mu_0, mu_1, mu_2, mu_3, mu_4, mu_5, mu_6, col(mu_7), col(mu_8)) < 0)
                         display('invalid negative mu');
                         keyboard;
