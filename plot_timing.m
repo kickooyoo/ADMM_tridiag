@@ -1,5 +1,6 @@
 colors = 'cmgkbry';
 markers = 'ox+sd*.^v><ph';
+markers = '-';
 exps = who('time*');
 start_ndx = 1;
 end_ndx = niters+1;
@@ -26,11 +27,14 @@ for ii = 1:length(exps)
 		indeces = 'start_ndx:end_ndx,jj';
 	else
 		indeces = 'jj,start_ndx:end_ndx';
-	end
+        end
+        if start_ndx == 1
+                time_comp = sprintf(' - %s(1)', curr_name);
+        end
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
-		eval(sprintf('plot(cumsum(%s(%s)), xform(%s%s(%s)), ''%s%s'')', curr_name, indeces, y_val, suffix, indeces, curr_color, curr_marker));
+		eval(sprintf('plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'')', curr_name, indeces, time_comp, y_val, suffix, indeces, curr_color, curr_marker));
 		legend_str = [legend_str; sprintf('%s,%d', suffix,jj)];
 		hold on; 
 	end
@@ -56,7 +60,7 @@ for ii = 1:length(exps)
 		indeces = 'start_ndx:end_ndx,jj';
 	else
 		indeces = 'jj,start_ndx:end_ndx';
-	end
+        end
 	curr_color = colors(mod(ii, length(colors)) + 1);
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);

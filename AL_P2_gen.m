@@ -126,7 +126,7 @@ calc_errcost = 1;
 if (calc_errcost)
         calc_orig_cost = @(y, A, S, R, x, lambda) norm(col(y - A*(S*x)),2)^2/2 + ...
                 lambda* sum(col(arg.pot.potk(col(R*x))));
-        err = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+        err = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
         costOrig = calc_orig_cost(y, A, S, R, x, lambda);
 end
 
@@ -162,7 +162,7 @@ for ii = 1:niters
         eta_z = eta_z - (z - x);
         time = [time toc(iter_start)];
         if (calc_errcost)
-                err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+                err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, A, S, R, x, lambda);
         end
         if mod(ii,10) == 0
