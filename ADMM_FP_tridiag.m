@@ -142,7 +142,7 @@ if(arg.attempt_par)
         end
 end
 
-err(1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
 time(1) = toc;
 if arg.prof
@@ -186,7 +186,7 @@ while iter <= niters
                                 display('not enough workers in pool, use another pmethod');
                                 keyboard;
                         end
-                        spmd;
+                        spmd(4);
                                 bigu = update_u(labindex, v0, v2, v4, v5, ...
                                         v7, mu0, mu1, mu2, mu3, mu4, mu5, ...
                                         mu6, mu7, mu8, eta0, eta1, eta2, ...
@@ -284,7 +284,7 @@ while iter <= niters
                         spmd;
                                 bigv = update_v(labindex, u0, u1, u2, u3, ...
                                         x, mu0, mu1, mu2, mu3, mu4, mu5, ...
-                                        mu6, mu7, mu8, eta1, eta3, eta7, ...
+                                        mu6, mu7, mu8, eta0, eta1, eta2, eta3, eta7, ...
                                         eta8, CH, CV, AWy1, AWy2, v45det);
                         end
                         tmp = bigv{1};
@@ -336,7 +336,7 @@ while iter <= niters
         if arg.timing, eta_times(iter) = toc(eta_start); end
         
         time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, arg.mask);
+	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)
@@ -418,7 +418,7 @@ end
 end
 
 function v = update_v(labindex, u0, u1, u2, u3, x, mu0, mu1, mu2, ...
-        mu3, mu4, mu5, mu6, mu7, mu8, eta1, eta3,  ...
+        mu3, mu4, mu5, mu6, mu7, mu8, eta0, eta1, eta2, eta3,  ...
         eta7, eta8, CH, CV, AWy1, AWy2, v45det)
 switch labindex
         case 1
@@ -429,7 +429,7 @@ switch labindex
         case 3
                 v = v5_update(AWy1, AWy2, v45det, mu4, mu6);
         case 4
-                c = v7_update(mu7, mu8, u3, eta7, x, eta8);
+                v = v7_update(mu7, mu8, u3, eta7, x, eta8);
         otherwise
                 display('invalid labindex');
                 keyboard;
