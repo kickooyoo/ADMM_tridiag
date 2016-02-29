@@ -335,8 +335,8 @@ while iter <= niters
         eta8 = eta8 - (x - (-v7));
         if arg.timing, eta_times(iter) = toc(eta_start); end
         
-        time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+        time(iter + 1, 1) = toc(iter_start);
+	err(iter + 1, 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)
@@ -350,7 +350,7 @@ while iter <= niters
                 keyboard
         end
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
-        cost(iter + 1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
+        cost(iter + 1, 1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
         if warmup_iter < arg.warmup
                 [x, u0, u1, u2, u3, v0, v2, v4, v5, v7, eta0, eta1, eta2, ...
                         eta3, eta4, eta5, eta6, eta7, eta8] = init_vars(...
