@@ -60,7 +60,7 @@ switch arg.split
                 mu = {mu_P2; mu_P2*nu1; mu_P2*nu2};
         case 'ADMM-tridiag'
                 mu_2 = Nr / (arg.kapu_tri - 1);
-                if ~isempty(arg.fancy_mu34)
+                if arg.fancy_mu34
                         fudge = arg.mu0_fudge;
                         if arg.fancy_mu01
                                 fudge = fudge.*arg.mask;
