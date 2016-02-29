@@ -44,8 +44,12 @@ end
 
 if do_MFISTA
 	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf);
-	save(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'xMFIS', 'niters_inf');
+	save(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'xMFIS', 'niters_inf', 'CMFIS', 'TFIS');
 end
 
 send_mai_text('done with xinf, now run timing tests')
+return;
+	[xMFIS_sc, CMFIS_sc, TFIS_sc, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S_sc, beta_sc, niters_inf);
+	save(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d_scaled.mat', slice_str, 3, beta), 'xMFIS', 'niters_inf');
+
 

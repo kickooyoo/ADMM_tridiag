@@ -97,6 +97,7 @@ F_center = GsplineF(Nx, Ny, 1, Nc, 'samp', center_samp);
 y_center = F_center * Sxtrue(:);
 y_center_noise = y_center + sig*randn(size(y_center)) + 1i*sig*randn(size(y_center));
 zero_fill = reshape(F_center'*y_center_noise, Nx, Ny, Nc)/(Nx * Ny);
+zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
 % [xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
 %SoS_compensate = sum(conj(sense_maps).*Sxtrue,3)./(sum(abs(sense_maps).^2,3));
@@ -136,7 +137,8 @@ elseif slice == 38
 	end
 elseif (slice == 0) && issim
 	if (reduction == 6) || (reduction == 4)
-		beta = 2^12;
+		beta = 2^12;% cannot find file, need to regen
+		beta = 2^13;
 	elseif reduction == 10
 		beta = 2^14;
 	else
