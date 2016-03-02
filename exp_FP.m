@@ -1,6 +1,6 @@
 issim = 0;
 exp_setup;
-xtrue = load_x_inf(slice, beta);
+xtrue = load_x_inf(slice, beta, curr_folder);
 niters = 100;
 
 [x_smpd, ~, nrmsd_smpd, ~, time_smpd] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, ...
@@ -14,4 +14,4 @@ niters = 100;
 [x_warm, ~, nrmsd_warm, ~, time_warm] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, ...
         xtrue, niters, 'warmup', 10);
 
-save(sprintf('./reviv/curr/%s_PF_timing_%dx%d_%diter_%s.mat', machine(1:3), Nx, Ny, niters, slice_str));
+save(sprintf('%s/%s_PF_timing_%dx%d_%diter_%s.mat', curr_folder, machine(1:3), Nx, Ny, niters, slice_str));

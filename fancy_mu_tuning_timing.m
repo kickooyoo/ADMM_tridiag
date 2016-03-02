@@ -3,13 +3,7 @@
 exp_setup;
 niters = 100;
 
-if issim
-	slice_str = 'sim';
-else
-	slice_str = sprintf('slice%d', slice);
-end
-
-load(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x*MFIS*');
+load(sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'x*MFIS*');
 if isvar('xMFIS')
         x_MFISTA = xMFIS;
 end
@@ -53,7 +47,7 @@ plot_timing
 %%
 [~, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, ...
 	F, S, R, xinit, niters, beta, x_MFISTA,'inner_iter', 1, 'mask', mask);
-save(sprintf('./reviv/curr/fancy_mu_test_MFISTAinf_%dx%d_%diter_%s%s.mat', ...
+save(sprintf('%s/fancy_mu_test_MFISTAinf_%dx%d_%diter_%s%s.mat', curr_folder, ...
 	Nx, Ny, niters, slice_str, save_suffix));
 %send_mai_text('done with fancy mu exp timing');
 

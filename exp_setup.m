@@ -1,12 +1,26 @@
 % setup tridiag exp
+
+truncate = 0;
+
+wavelets = 0;
+
 if ~issim
 	if ~isvar('home_path')
 		tridiag_setup;
 	end
-	slice = 38;
-	% load in in vivo data
+	switch orient
+		case 'axial'
+			slice = 38;
+		case 'sagittal'
+			slice = 69;
+		case 'coronal'
+			slice = 135; 
+		otherwise
+			display(sprintf('need to choose slice for %s orientation', orient))
+			keyboard
+	end
 	if ~isvar('Sxtrue')
-		[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice);
+		[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice, 'orient', orient);
 	end
 else
 	slice = 0;
@@ -14,9 +28,6 @@ else
 end
 
 [Nx, Ny, Nc] = size(Sxtrue);
-truncate = 0;
-
-wavelets = 0;
 
 if truncate
 	Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
@@ -30,10 +41,12 @@ if ~isvar('reduction')
 	reduction = 6;%6;
 	display(sprintf('sampling factor set to: %d', reduction));
 end
+[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction);
+
 if ~isvar('samp')
 	% generate sampling pattern
 	if 1	
-		samp_fname = sprintf('PD_sampling_%dx%d_R%d_center8.mat', Nx, Ny, reduction);
+		samp_fname = sprintf('./reviv/%s/PD_sampling_%dx%d_R%d_center8.mat', orient, Nx, Ny, reduction);
 		if exist(samp_fname)
 			load(samp_fname);
 		else
@@ -61,9 +74,7 @@ if ~isvar('samp')
 		end
 		Ncentx = 8; % sample a window of 2*N around DC along x
 		Ncenty = 8; % sample a window of 2*N around DC along y
-
 		samp = logical(coverDC_SamplingMask(SP, Ncentx, Ncenty));
-
 	end
 end
 
@@ -121,40 +132,6 @@ else
 end
 
 % parameters
-if slice == 67
-	beta = 2^19;
-elseif slice == 38
-	%beta = 2^24; % for slice 38 and l2b = 12 samp
-	%beta = 2^28; % for slice 38 and l2b = 16 samp
-	%beta = 2^25; % for slice 38 and sathish samp and sathish samp
-	if reduction <= 8
-		beta = 2^20; % for slice 38 and new samp R=6, sathish smap
-	elseif reduction == 12
-		beta = 2^18;
-	else
-		display('unknown what is best beta, choosing 2^20 arbitrarily')
-		beta = 2^20;
-	end
-elseif (slice == 0) && issim
-	if (reduction == 6) || (reduction == 4)
-		beta = 2^12;% cannot find file, need to regen
-		beta = 2^13;
-	elseif reduction == 10
-		beta = 2^14;
-	else
-		display('unknown what is best beta, choosing 2^13 arbitrarily');
-		beta = 2^13;
-	end
-else
-	display(sprintf('unknown beta for slice %d', slice));
-	keyboard;
-end
-% convergence parameters
+beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
 
-% for file saving and loading
-if issim 
-	slice_str = 'sim';
-else
-	slice_str = sprintf('slice%d', slice);
-end

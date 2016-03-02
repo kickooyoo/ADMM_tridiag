@@ -4,7 +4,7 @@ exp_setup;
 
 niters = 100;
 
-xtrue = load_x_inf(slice, beta);
+xtrue = load_x_inf(slice, beta, curr_folder);
 
 if ~isvar('save_suffix')
 	save_suffix = '';
@@ -21,7 +21,7 @@ for ii = 1:length(fudges)
 	end
 end
 
-save(sprintf('./reviv/curr/%s_mu_sweep_FP_MFISTAinf_%dx%d_%diter_%s%s.mat', ...
+save(sprintf('%s/%s_mu_sweep_FP_MFISTAinf_%dx%d_%diter_%s%s.mat', curr_folder,...
 	machine(1:3), Nx, Ny, niters, slice_str, save_suffix));
 send_mai_text('done with fancy mu exp timing');
 

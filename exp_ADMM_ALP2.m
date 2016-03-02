@@ -1,9 +1,9 @@
 % experimental data for tridiag_ADMM
 
 exp_setup;
-niters = 10000;
+niters = 6000;
 
-xtrue = load_x_inf(slice, beta);
+xtrue = load_x_inf(slice, beta, curr_folder);
 
 %for ii = 1:1%3%5
 %        [xhat_alp2t(:,:,ii), ~, nrmsd_alp2t(ii,:), costOrig_alp2t(ii,:), time_alp2t(ii,:)] = AL_P2_gen(y_noise, F, S, R, xinit, niters, beta, xtrue,'inner_iter', ii, 'mask', mask);
@@ -23,7 +23,7 @@ end
 %[xhat_tri_max, ~, nrmsd_tri_max, costOrig_tri_max, time_tri_max] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, xtrue, niters, 'nthread', int32(maxNumCompThreads('automatic')),'mu', ones(1,5));
 [xhat_tri_FP, ~, nrmsd_tri_FP, costOrig_tri_FP, time_tri_FP] = ADMM_FP_tridiag(y_noise, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', mu_args);
 
-save(sprintf('./reviv/curr/%s_timing_%dx%d_%diter_%s_MFISTAtrue.mat', machine(1:3), Nx, Ny, niters, slice_str));
+save(sprintf('%s/%s_timing_%dx%d_%diter_%s_MFISTAtrue.mat', curr_folder, machine(1:3), Nx, Ny, niters, slice_str));
 %send_mai_text('done with mpel8 timing');
 
 display('DONE');

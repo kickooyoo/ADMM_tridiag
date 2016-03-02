@@ -4,20 +4,14 @@ exp_setup;
 niters = 700;
 
 if issim
-	slice_str = 'sim';
-else
-	slice_str = sprintf('slice%d', slice);
-end
-
-if issim
 	x_trues = {body_coil};
 	inf_strs = {'true'};
 else
-	load(sprintf('./reviv/curr/x_MFISTA_inf_%s_beta%.*d.mat', slice_str, 3, beta), 'x*MFIS*');
+	load(sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'x*MFIS*');
 	if isvar('xMFIS')
 		x_MFISTA = xMFIS;
 	end
-	load(sprintf('./reviv/curr/x_tri_inf_%s_beta%.*d.mat', slice_str, 4, beta), 'x_tri_inf');
+	load(sprintf('%s/x_tri_inf_%s_beta%.*d.mat', curr_folder, slice_str, 4, beta), 'x_tri_inf');
 	x_trues = {x_MFISTA; x_tri_inf};
 	inf_strs = {'MFISTA', 'tri'};
 end
@@ -49,7 +43,7 @@ for ii = 1:length(x_trues)
 	[xhat_alp2t, ~, nrmsd_alp2t, costOrig_alp2t, time_alp2t] = AL_P2_gen(y_noise, ...
 		F, S, R, xinit, niters, beta, x_true,'inner_iter', 1, 'mask', mask);
 
-	save(sprintf('./reviv/curr/mu_test_%sinf_%dx%d_%diter_%s%s.mat', inf_str, Nx, Ny, niters, slice_str, save_suffix));
+	save(sprintf('%s/mu_test_%sinf_%dx%d_%diter_%s%s.mat', curr_folder, inf_str, Nx, Ny, niters, slice_str, save_suffix));
 end
 send_mai_text('done with mu exp timing');
 

@@ -3,7 +3,7 @@ exp_setup;
 niters = 300;
 
 % load xinfs
-load(sprintf('./reviv/curr/x_tri_inf_slice%d_beta%.*d.mat', slice, 3, beta), 'x_tri_inf');
+load(sprintf('%s/x_tri_inf_slice%d_beta%.*d.mat', curr_folder, slice, 3, beta), 'x_tri_inf');
 if truncate
         x_tri_inf = x_tri_inf(3:end-2, 3:end-2);
 end
@@ -14,8 +14,8 @@ for ii = 1:length(nthread_vals);
 	[xhat_tri(:,:,ii), ~, nrmsd_tri(:,ii), costOrig_tri(:,ii), time_tri(:,ii)] = ADMM_tridiag(y_noise, F, S, CH, CV, alph, beta, xinit, x_tri_inf, niters, 'mask', mask, 'nthread', nthread, 'timing', 'tridiag');
 end
 
-save(sprintf('./reviv/curr/timing_tridiag_only_%dx%d_%diter_varthread.mat', Nx, Ny, niters));
+save(sprintf('%s/timing_tridiag_only_%dx%d_%diter_varthread.mat', curr_folder, Nx, Ny, niters));
 
-send_mai_text('done with mpel8 timing');
+send_mai_text(sprintf('done with %s timing', machine(1:3));
 
 display('DONE');
