@@ -1,5 +1,5 @@
-function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
-%function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter)
+function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, varargin)
+%function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, varargin)
 % 
 % wrapper for MFISTA for getting x_inf for tridiagonal ADMM
 
@@ -56,6 +56,8 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 	params.mEAWA = mEAWA;
 	params.xinf = zeros(Nx,Ny); 
 	params.xinfnorm = 1;
+
+	params = vararg_pair(params, varargin);
 	
 	[xMFIS CMFIS TFIS l2DFIS RMSEFIS] = runMFISTA(data, AWy, xini, params);
 	if norm(xMFIS - xini) == 0

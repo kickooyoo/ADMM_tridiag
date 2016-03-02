@@ -52,4 +52,6 @@ switch machine(1:end-1) % last char is some sort of new line
     otherwise
         display('unknown machine');
 end
-setup;
+if ~exist('im','file')
+	setup;
+end
