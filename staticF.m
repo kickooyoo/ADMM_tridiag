@@ -10,6 +10,7 @@ function F = staticF(Nx, Ny, Nc, varargin)
 arg.Nx = Nx;
 arg.Ny = Ny;
 arg.Nc = Nc;
+arg.shift_img = false;
 
 arg.Nr = arg.Nx*arg.Ny;
 arg.Ns = arg.Nr;
@@ -57,6 +58,9 @@ end
 % y = G * x
 function S = staticF_forw(arg,s)
 
+if arg.shift_img
+        s = fftshift(s);
+end
 S = fft(fft(s,[],1),[],2);
 if ~isempty(arg.samp)
         S = S(repmat(arg.samp, [1 1 arg.Nc]));
@@ -71,5 +75,7 @@ if ~isempty(arg.samp)
         S = embed(col(S), repmat(arg.samp, [1 1 arg.Nc]));
 end
 s = ifft(ifft(S,[],1),[],2)*arg.Nr;
-
+if arg.shift_img 
+        s = fftshift(s);
+end
 end

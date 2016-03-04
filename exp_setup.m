@@ -81,7 +81,7 @@ end
 
 % construct fatrices
 S = staticS(sense_maps);
-F = staticF(Nx, Ny, Nc, 'samp', samp);
+F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', true);
 [CH, CV] = construct_finite_diff([Nx Ny]); 
 R = [CH; CV];
 Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
