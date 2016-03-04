@@ -9,7 +9,7 @@ case 'axial'
 case 'sagittal'
 	beta = 2^20;
 case 'coronal'
-	beta = 2^20;
+	beta = 2^21;
 otherwise
 	display(sprintf('unknown orientation %s', orient));
 	keyboard;

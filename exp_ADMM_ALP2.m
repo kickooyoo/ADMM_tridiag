@@ -16,9 +16,9 @@ end
 if ~isvar('xhat_AL')
 	[xhat_AL, ~, nrmsd_AL, costOrig_AL, time_AL] = AL_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', mu_args);
 end
-if ~isvar('xhat_ALsm')
-	[xhat_ALsm, ~, nrmsd_ALsm, costOrig_ALsm, time_ALsm] = AL_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', [mu_args {'fancy_mu34', false}]);
-end
+%if ~isvar('xhat_ALsm')
+%	[xhat_ALsm, ~, nrmsd_ALsm, costOrig_ALsm, time_ALsm] = AL_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', [mu_args {'fancy_mu34', false}]);
+%end
 if ~isvar('xhat_tri_FP')
 	[xhat_tri_FP, ~, nrmsd_tri_FP, costOrig_tri_FP, time_tri_FP] = ADMM_FP_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', mu_args);
 end

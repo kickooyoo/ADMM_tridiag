@@ -3,7 +3,7 @@ function confirm_compile(file)
 % recompiles mex file
 
 
-if ~exist(sprintf('./pthread_tutor/%s.c', file)
+if ~exist(sprintf('./pthread_tutor/%s.c', file))
         display(sprintf('cannot find ./pthread_tutor/%s.c', file))
         keyboard;
 end
