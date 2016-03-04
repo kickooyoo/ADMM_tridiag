@@ -4,8 +4,8 @@ exp_setup;
 niters_inf = 50000;
 
 do_tri = 0;
-do_circ = 0;
-do_MFISTA = 1;
+do_circ = 1;
+do_MFISTA = 0;
 
 if do_tri
 	[xhat_tri, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', plain_mu, 'save_progress', 'tridiag_xinf');
@@ -13,9 +13,8 @@ if do_tri
 	save(sprintf('%s/x_tri_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'x_tri_inf', 'niters_inf');
 end
 if do_circ
-	[xhat_alp2, ~, ~, costOrig_alp2, time_alp2] = AL_P2_gen(y_noise, F, S, Rcirc, SoS, niters_inf, beta, zeros(size(SoS)), 'zmethod', 'FFT');
-	x_alp2c_inf = xhat_alp2;
-	save(sprintf('%s/x_alp2c_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta),'x_alp2c_inf', 'niters_inf');
+	[xMFISc, CMFISc, TFISc, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf, curr_folder);
+	save(sprintf('%s/x_MFISTA_circ_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'xMFISc', 'niters_inf', 'CMFISc', 'TFISc');
 end
 
 if 0%1

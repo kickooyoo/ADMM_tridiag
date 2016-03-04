@@ -1,4 +1,4 @@
-function [sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice, varargin);
+function [sense_maps, body_coil, Sxtrue, y] = invivo_exp(home_path, slice, varargin);
 %function [smaps, body_coil, Sxtrue] = invivo_exp(home_path, slice, varargin);
 % sets up slice 38 experiment from retrospectively sampled in vivo data
 %
@@ -14,8 +14,7 @@ fn = [home_path 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
 
 nc = 8;
 [im4d, d] = recon3dft(fn,nc);
-[body_coil_images, d] = recon3dft([home_path 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
-
+[body_coil_images, dbc] = recon3dft([home_path 'Documents/data/2010-07-06-fessler-3d/raw/p24064-3dspgr-body.7'],1);
 [Nx, Ny, Nz, Nc] = size(im4d);
 
 switch arg.orient
@@ -23,17 +22,19 @@ case 'axial'
 	assert(slice < Nz, sprintf('slice choice %d not possible, only %d slices axially', slice, Nz));
 	mapped_im = squeeze(im4d(:,:,slice,:));
 	body_coil = squeeze(body_coil_images(:,:,slice));
-
+	d = ifft(fftshift(fftshift(d,1),2),[],3);
+	%d = ifft(d,[],3);
+	y = squeeze(d(:,:,slice,:));
 case 'sagittal'
 	assert(slice < Ny, sprintf('slice choice %d not possible, only %d slices sagitally', slice, Ny));
 	mapped_im = squeeze(im4d(:,slice,:,:));
 	body_coil = squeeze(body_coil_images(:,slice,:));
-
+	y = squeeze(d(:,slice,:,:));
 case 'coronal'
 	assert(slice < Nx, sprintf('slice choice %d not possible, only %d slices coronally', slice, Nx));
 	mapped_im = squeeze(im4d(slice,:,:,:));
 	body_coil = squeeze(body_coil_images(slice,:,:));
-
+	y = squeeze(d(slice,:,:,:));
 otherwise
 	display(sprintf('unknown orientation: %s', arg.orient))
 	keyboard;

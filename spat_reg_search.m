@@ -21,7 +21,7 @@ if gen
 	niters = 7500;
 	% already done 2.^(3:20);
 	betas = 2.^(19:0.5:23);
-	betas = 2.^(16:24);
+	betas = 2.^(23:24);
 	[bc_sc, sc] = ir_wls_init_scale(F*S, y_noise, body_coil);
 	xinit_tmp = xinit;%zeros(size(xinit));%(xinit + bc_sc)./2;
 else
@@ -35,7 +35,7 @@ for ii = 1:length(betas)
 		case 'tridiag'
 			fname = sprintf('%s/x_tri_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 			if gen
-				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y, F, S, CH, CV, beta, xinit_tmp, zeros(size(SoS)), niters);
+				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit_tmp, zeros(size(SoS)), niters);
 				save(fname, 'x_tri_inf', 'body_coil');
 				xhat_betas(:,:,ii) = x_tri_inf;
 				body_coil_err(ii) = calc_NRMSE_over_mask(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
@@ -49,7 +49,7 @@ for ii = 1:length(betas)
 		case 'MFISTA' 
 			fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 			if gen
-				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit_tmp, F, S, beta, niters, curr_folder);
+				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit_tmp, F, S, beta, niters, curr_folder);
 				save(fname, 'x_MFISTA', 'body_coil');
 				%if isvar('x_MFISTA')
 					xhat_betas(:,:,ii) = x_MFISTA;

@@ -27,7 +27,7 @@ if ~isvar('nrmsd_MFIS')
 	[xMFIS, costOrig_MFIS, time_MFIS, nrmsd_MFIS, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, round(niters*1.5), curr_folder, 'xinf', xinf, 'xinfnorm', xinf_norm);
 end
 save(sprintf('%s/%s_timing_%dx%d_%diter_%s_MFISTAtrue.mat', curr_folder, machine(1:3), Nx, Ny, niters, slice_str));
-send_mai_text('done with mpel8 timing');
+send_mai_text(sprintf('done with %s timing', machine(1:3)));
 
 
 

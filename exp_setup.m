@@ -10,6 +10,7 @@ if ~strcmp(orient, 'sim')
 	switch orient
 		case 'axial'
 			slice = 38;
+			slice = 90;
 		case 'sagittal'
 			slice = 69;
 		case 'coronal'
@@ -19,7 +20,7 @@ if ~strcmp(orient, 'sim')
 			keyboard
 	end
 	if ~isvar('Sxtrue')
-		[sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice, 'orient', orient);
+		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient);
 	end
 else
 	slice = 0;
@@ -94,13 +95,19 @@ if wavelets
 end
 
 % generate data
-y = F * Sxtrue(:);
-SNR = 40;
-sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
-rng(0, 'twister')
-y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
-
-
+if strcmp(orient, 'sim')
+	y = F * Sxtrue(:);
+	SNR = 40;
+	sig = 10^(-SNR/20) * norm(y) / sqrt(length(y));
+	rng(0, 'twister')
+	y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
+elseif isvar('y_full')
+%	y_noise = masker(y_full, repmat(fftshift(samp), [1 1 Nc]));
+	y_noise = masker(y_full, repmat(samp, [1 1 Nc]));
+else
+	display('should have y_noise from invivo_exp');
+	keyboard
+end
 % initialize with SoS zero-fill solution
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
