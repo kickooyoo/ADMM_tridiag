@@ -7,7 +7,7 @@ case 'sim'
 case 'axial'
 	beta = choose_beta_axial(slice, reduction);
 case 'sagittal'
-	beta = 2^20;
+	beta = 2^23;
 case 'coronal'
 	beta = 2^21;
 otherwise

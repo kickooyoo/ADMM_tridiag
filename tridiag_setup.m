@@ -9,7 +9,7 @@ if nfs_broken
 end
 
 switch machine(1:end-1) % last char is some sort of new line
-    case {'eecs-IV1', 'iv1'}
+    case {'eecs-IV1', 'iv1', sprintf('\niv1')}
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
         addpath(genpath('~/Documents/mai_code/ADMM_tridiag'))

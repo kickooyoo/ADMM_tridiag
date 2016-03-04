@@ -4,8 +4,8 @@ exp_setup;
 niters_inf = 50000;
 
 do_tri = 0;
-do_circ = 0;
-do_MFISTA = 1;
+do_circ = 1;
+do_MFISTA = 0;
 
 if do_tri
 	[xhat_tri, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, SoS, zeros(size(SoS)), niters_inf, 'mu', plain_mu, 'save_progress', 'tridiag_xinf');
