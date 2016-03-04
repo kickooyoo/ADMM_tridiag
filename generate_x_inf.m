@@ -35,19 +35,20 @@ if wavelets
 	save(sprintf('%s/x_alp2cw_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta),'x_alp2cw_inf', 'niters_inf');
 end
 if do_circ && do_MFISTA
-	[xMFIS_circ, CMFIS_circ, TFIS_circ, ~, ~] = MFISTA_wrapper(Nx, Ny, Rcirc, y_noise, xinit, F, S, beta, niters_inf);
+	[xMFIS_circ, CMFIS_circ, TFIS_circ, ~, ~] = MFISTA_wrapper(Nx, Ny, Rcirc, y_noise, xinit, F, S, beta, niters_inf, curr_folder);
 	save(sprintf('%s/x_MFISTA_circ_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'xMFIS_circ', 'niters_inf');
 end
 
 if do_MFISTA
-	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf);
+	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, niters_inf, curr_folder);
 	save(sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta), 'xMFIS', 'niters_inf', 'CMFIS', 'TFIS');
 end
 
 send_mai_text('done with xinf, now run timing tests')
 return;
 niters_inf = 10000;
-	[xMFIS_sc, CMFIS_sc, TFIS_sc, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S_sc, beta_sc, niters_inf);
+	[xMFIS_sc, CMFIS_sc, TFIS_sc, ~, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S_sc, beta_sc, niters_inf, curr_folder);
+
 	save(sprintf('%s/x_MFISTA_inf_%s_beta%.*d_scaled.mat', curr_folder, slice_str, 3, beta), 'xMFIS', 'niters_inf');
 
 

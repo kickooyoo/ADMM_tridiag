@@ -24,7 +24,7 @@ if ~isvar('xhat_tri_FP')
 end
 if ~isvar('nrmsd_MFIS')
 	xinf_norm = norm(col(xinf), 2);
-	[xMFIS, costOrig_MFIS, time_MFIS, nrmsd_MFIS, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, round(niters*1.5), 'xinf', xinf, 'xinfnorm', xinf_norm);
+	[xMFIS, costOrig_MFIS, time_MFIS, nrmsd_MFIS, ~] = MFISTA_wrapper(Nx, Ny, R, y_noise, xinit, F, S, beta, round(niters*1.5), curr_folder, 'xinf', xinf, 'xinfnorm', xinf_norm);
 end
 save(sprintf('%s/%s_timing_%dx%d_%diter_%s_MFISTAtrue.mat', curr_folder, machine(1:3), Nx, Ny, niters, slice_str));
 send_mai_text('done with mpel8 timing');

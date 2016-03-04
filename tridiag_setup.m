@@ -1,7 +1,12 @@
 % mai_setup.m
 % run in /mai_code
-
+nfs_broken = true;
 [~, machine] = system('hostname');
+
+nfs_broken = isempty(strfind(lower(machine), 'iv1')) && ~exist('iv1h', 'dir');
+if nfs_broken
+	machine = 'iv1.';
+end
 
 switch machine(1:end-1) % last char is some sort of new line
     case {'eecs-IV1', 'iv1'}
@@ -11,10 +16,17 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/Documents/mai_code/util'))
         addpath(genpath('~/Documents/mai_code/spline_basis'))
         addpath(genpath('~/Documents/mai_code/pthread_tutor'))
-        addpath(genpath('~/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/Documents/contrib/ramani_MFISTA');
+	addpath('~/Documents/contrib/ramani_fbrain');
 	home_path = '~/';
 	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
+	if nfs_broken
+		[~, machine] = system('hostname');
+		if isempty(strfind(lower(machine), 'iv1'))
+			db_path = '';
+		end
+		display('warning NFS broken, assuming iv1 paths');
+	end
     case 'mpel8.eecs.umich.edu'
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
@@ -22,8 +34,8 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/iv1h//Documents/mai_code/util'))
         addpath(genpath('~/iv1h//Documents/mai_code/spline_basis'))
         addpath(genpath('~/iv1h//Documents/mai_code/pthread_tutor'))
-        addpath(genpath('~/iv1h//Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
+	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
     case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu'}
@@ -32,8 +44,8 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath(genpath('~/iv1h/Documents/mai_code/util'))
         addpath(genpath('~/iv1h/Documents/mai_code/spline_basis'))
         addpath(genpath('~/iv1h/Documents/mai_code/pthread_tutor'))
-        addpath(genpath('~/iv1h/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
+	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
     case 'vega'

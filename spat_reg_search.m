@@ -18,7 +18,7 @@ end
 %method = 'tridiag';
 method = 'MFISTA';
 if gen
-	niters = 20000;
+	niters = 7500;
 	% already done 2.^(3:20);
 	betas = 2.^(19:0.5:23);
 	betas = 2.^(16:24);
@@ -49,7 +49,7 @@ for ii = 1:length(betas)
 		case 'MFISTA' 
 			fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 			if gen
-				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit_tmp, F, S, beta, niters);
+				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit_tmp, F, S, beta, niters, curr_folder);
 				save(fname, 'x_MFISTA', 'body_coil');
 				%if isvar('x_MFISTA')
 					xhat_betas(:,:,ii) = x_MFISTA;

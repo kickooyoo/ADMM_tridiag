@@ -1,5 +1,5 @@
-function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, varargin)
-%function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, varargin)
+function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, curr_folder, varargin)
+%function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, curr_folder, varargin)
 % 
 % wrapper for MFISTA for getting x_inf for tridiagonal ADMM
 
@@ -44,14 +44,15 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 
 	params.N = [Nx Ny];
 
-	if exist('mEAWA_MFISTA.mat')
-		load('mEAWA_MFISTA.mat')
+	mEAWA_fname = [curr_folder '/mEAWA_MFISTA.mat'];
+	if exist(mEAWA_fname)
+		load(mEAWA_fname)
 	else
 		params.eigtol = eps; % Matlab epsilon
 		params.eigpowermaxitr = 10000;
 		params.eigdispitr = 10;	
 		mEAWA = get_MaxEigenValue_1by1(params, 'AWA'); 
-		save('mEAWA_MFISTA.mat','mEAWA');
+		save(mEAWA_fname,'mEAWA');
 	end
 	params.mEAWA = mEAWA;
 	params.xinf = zeros(Nx,Ny); 

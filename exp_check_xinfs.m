@@ -21,7 +21,7 @@ load(sprintf('./reviv/curr/x_alp2_inf_slice%d_beta%.*d.mat', slice, 3, beta),'x_
 [xhat_tri, ~, nrmsd_tri, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xMFIS, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
 [xhat_tri_selfinit, ~, nrmsd_tri_self_init, costOrig_tri_selfinit, time_tri_selfinit] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, x_tri_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
 [xhat_tri_alp2init, ~, nrmsd_tri_alp2init, costOrig_tri_alp2init, time_tri_alp2init] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, x_alp2_inf, x_tri_inf, niters, 'mask', mask, 'mu', plain_mu);
-[xhat_MFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y_noise, x_tri_inf, F, S, beta, niters);
+[xhat_MFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y_noise, x_tri_inf, F, S, beta, niters, curr_folder);
 
 save(sprintf('./reviv/curr/check_xinfs_%dx%d_%diter_%s.mat', Nx, Ny, niters, slice_str));
 send_mai_text('done with mpel8 timing');
