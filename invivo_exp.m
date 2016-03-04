@@ -40,32 +40,35 @@ otherwise
 	keyboard;
 end
 
-% if strcmp(arg.orient, 'axial') && (slice == 38)
-% 	smap_fname = sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice);
-% elseif strcmp(arg.orient, 'axial')
-% 	smap_fname = sprintf('%s/axial/axial_slice%d_smap.mat', arg.base, slice);
-% elseif strcmp(arg.orient, 'sagittal')
-% 	smap_fname = sprintf('%s/sagittal/sag_slice%d_smap.mat', arg.base, slice);
-% elseif strcmp(arg.orient, 'coronal')
-% 	smap_fname = sprintf('%s/coronal/cor_slice%d_smap.mat', arg.base, slice);
-% end
-% if exist(smap_fname)
-% 	load(smap_fname, '*map*'); 
-% else
-% 	display(sprintf('cannot load sense maps for slice %d', slice));
-% 	display('try est_S_reg')
-% 	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil);
-% 	keyboard
-% 	save(smap_fname, 'sense_maps');
-% end
-% if ~isvar('sense_maps') && isvar('Smap_QPWLS')
-% 	sense_maps = Smap_QPWLS;
-% elseif  ~isvar('sense_maps') && isvar('smap')
-% 	sense_maps = smap;
-% elseif ~isvar('sense_maps')
-% 	display('not sure which var is smap');
-% 	keyboard
-% end
-sense_maps = zeros(Nx, Ny, Nc);
+if strcmp(arg.orient, 'axial') && (slice == 38)
+	smap_fname = sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice);
+elseif strcmp(arg.orient, 'axial')
+	smap_fname = sprintf('%s/axial/axial_slice%d_smap.mat', arg.base, slice);
+elseif strcmp(arg.orient, 'sagittal')
+	smap_fname = sprintf('%s/sagittal/sag_slice%d_smap.mat', arg.base, slice);
+elseif strcmp(arg.orient, 'coronal')
+	smap_fname = sprintf('%s/coronal/cor_slice%d_smap.mat', arg.base, slice);
+end
+if exist(smap_fname)
+	load(smap_fname, '*map*'); 
+else
+        centersamp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
+        F_center = staticF(Nx, Ny, 1, 'samp', centersamp);
+        mapped_im_lp = F_center'*F_center*mapped_im;
+        body_coil_lp = F_center'*F_center*body_coil;
+	display(sprintf('cannot load sense maps for slice %d', slice));
+	display('try est_S_reg')
+	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil);
+	keyboard
+	save(smap_fname, 'sense_maps');
+end
+if ~isvar('sense_maps') && isvar('Smap_QPWLS')
+	sense_maps = Smap_QPWLS;
+elseif  ~isvar('sense_maps') && isvar('smap')
+	sense_maps = smap;
+elseif ~isvar('sense_maps')
+	display('not sure which var is smap');
+	keyboard
+end
 Sxtrue = mapped_im;
 
