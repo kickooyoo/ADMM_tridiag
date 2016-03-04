@@ -1,10 +1,9 @@
 % experimental data for ADMM_tridiag
-issim = 0;
+
+orient = 'axial';
 exp_setup;
 
 niters = 100;
-
-xtrue = load_x_inf(slice, beta, curr_folder);
 
 if ~isvar('save_suffix')
 	save_suffix = '';
@@ -17,7 +16,7 @@ for ii = 1:length(fudges)
 	for jj = 1:length(ktris)
 		fudge = fudges(ii);
 		ktri = ktris(jj);
-		[x_FP(:,:,ii,jj), ~, nrmsd_FP(ii,jj,:), costOrig_FP(ii,jj,:), time_FP(ii,jj,:)] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xtrue, niters, 'mu_args', {'mu0_fudge', fudge, 'ktri', ktri});
+		[x_FP(:,:,ii,jj), ~, nrmsd_FP(ii,jj,:), costOrig_FP(ii,jj,:), time_FP(ii,jj,:)] = ADMM_FP_tridiag(y, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', {'mu0_fudge', fudge, 'ktri', ktri});
 	end
 end
 

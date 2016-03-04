@@ -3,10 +3,7 @@ function mu = get_mu(SS, RR, Nr, lambda, varargin)
 % set mu for nice condition numbers, based on AL-P2 splits
 
 % vals for x_tri_inf with beta = 2^19 and SNR 40 on slice 67
-arg.edge = 23800; % pixel diff for an edge
-arg.noise = 4000; % pixel diff for noise
-%arg.edge = 13600*10; % pixel diff for an edge
-%arg.noise = 9300*10; % pixel diff for noise
+arg.noise = 24000; % pixel diff for noise (default val for experiment with reduction of 6)
 arg.split = 'AL-P2'; % 'ADMM-tridiag'
 arg.alph = 0.5; % tridiag design param
 arg.mask = true(size(SS));
@@ -132,7 +129,7 @@ switch arg.split
                         keyboard
                 end
         case 'ADMM-FP-tridiag'
-                mu_0 = lambda/mean([arg.edge arg.noise]);
+                mu_0 = lambda/arg.noise;
                 mu_2 = mu_0;                
                 mu_4 = Nr / (arg.kapu_tri - 1);
                	if isempty(arg.set_FP) 

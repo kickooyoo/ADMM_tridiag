@@ -1,10 +1,10 @@
 function [sense_maps, body_coil, Sxtrue] = invivo_exp(home_path, slice, varargin);
-%[smaps, body_coil, xtrue] = function invivo_exp(home_path, slice);
+%function [smaps, body_coil, Sxtrue] = invivo_exp(home_path, slice, varargin);
 % sets up slice 38 experiment from retrospectively sampled in vivo data
 %
 % varargin:
 %	orient (string) 'axial', 'sagittal', 'coronal'
-%
+% 	base (string) './reviv', path to saved .mat file tree
 
 arg.orient = 'axial';
 arg.base = './reviv';
@@ -55,12 +55,13 @@ else
 	display('try est_S_reg')
 	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil);
 	keyboard
+	save(smap_fname, 'sense_maps');
 end
-if ~isvar('sense_map') && isvar('Smap_QPWLS')
+if ~isvar('sense_maps') && isvar('Smap_QPWLS')
 	sense_maps = Smap_QPWLS;
-elseif  ~isvar('sense_map') && isvar('smap')
+elseif  ~isvar('sense_maps') && isvar('smap')
 	sense_maps = smap;
-else
+elseif ~isvar('sense_maps')
 	display('not sure which var is smap');
 	keyboard
 end

@@ -13,24 +13,21 @@ else
 			keyboard
 	end
 end
-niters = 700;
 
-% already done 2.^(3:20);
-betas = 2.^(19:0.5:23);
 
 %method = 'tridiag';
 method = 'MFISTA';
-%if ~issim && ~isvar('body_coil')
-%	load(sprintf('body_coil_slice%d.mat', slice),'body_coil')
-%end
-
-%if issim
-%	[sense_maps, body_coil, Sxtrue] = sim_setup();
-%	[Nx, Ny, Nc] = size(Sxtrue);
-%	mask = true(Nx, Ny);
-%end 
-
-clear xhat_betas
+if gen
+	niters = 20000;
+	% already done 2.^(3:20);
+	betas = 2.^(19:0.5:23);
+	betas = 2.^(16:24);
+	[bc_sc, sc] = ir_wls_init_scale(F*S, y_noise, body_coil);
+	xinit_tmp = xinit;%zeros(size(xinit));%(xinit + bc_sc)./2;
+else
+	betas = 2.^(10:30);
+end
+xhat_betas = [];
 for ii = 1:length(betas)
 	beta = betas(ii);
 
@@ -38,32 +35,42 @@ for ii = 1:length(betas)
 		case 'tridiag'
 			fname = sprintf('%s/x_tri_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 			if gen
-				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y, F, S, CH, CV, beta, xinit, zeros(size(SoS)), niters);
+				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y, F, S, CH, CV, beta, xinit_tmp, zeros(size(SoS)), niters);
+				save(fname, 'x_tri_inf', 'body_coil');
+				xhat_betas(:,:,ii) = x_tri_inf;
+				body_coil_err(ii) = calc_NRMSE_over_mask(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
 			elseif exist(fname)
 				load(fname, 'x_tri_inf', 'body_coil');
+				xhat_betas(:,:,ii) = x_tri_inf;
+				body_coil_err(ii) = calc_NRMSE_over_mask(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
 			else
 				display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
-			end
-			xhat_betas(:,:,ii) = x_tri_inf;
-			curr_img = xhat_betas(:,:,ii);
-			body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
-			if gen
-				save(fname, 'x_tri_inf', 'body_coil');
 			end
 		case 'MFISTA' 
 			fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 			if gen
-				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, beta, niters);
+				x_MFISTA = MFISTA_wrapper(Nx, Ny, R, y, xinit_tmp, F, S, beta, niters);
+				save(fname, 'x_MFISTA', 'body_coil');
+				%if isvar('x_MFISTA')
+					xhat_betas(:,:,ii) = x_MFISTA;
+				%elseif isvar('xMFIS')
+				%	xhat_betas(:,:,ii) = xMFIS;
+				%else 
+				%	display('where is MFISTA output?')
+				%end
+				body_coil_err(ii) = calc_NRMSE_over_mask(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
 			elseif exist(fname)
-				load(fname, 'x_MFISTA', 'body_coil');
+				load(fname, '*MFIS*', 'body_coil');
+				%if isvar('x_MFISTA')
+					xhat_betas(:,:,ii) = x_MFISTA;
+				%elseif isvar('xMFIS')
+				%	xhat_betas(:,:,ii) = xMFIS;
+				%else 
+				%	display('where is MFISTA output?')
+				%end
+				body_coil_err(ii) = calc_NRMSE_over_mask(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
 			else
 				display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
-			end
-			xhat_betas(:,:,ii) = x_MFISTA;
-			curr_img = xhat_betas(:,:,ii);
-			body_coil_err(ii) = calc_NRMSE_over_mask(curr_img./max(abs(col(curr_img))), body_coil./max(abs(col(body_coil))), mask);
-			if gen
-				save(fname, 'x_MFISTA', 'body_coil');
 			end
 		otherwise
 			keyboard;

@@ -1,13 +1,12 @@
 % setup tridiag exp
 
 truncate = 0;
-
 wavelets = 0;
+if ~isvar('home_path')
+	tridiag_setup;
+end
 
-if ~issim
-	if ~isvar('home_path')
-		tridiag_setup;
-	end
+if ~strcmp(orient, 'sim')
 	switch orient
 		case 'axial'
 			slice = 38;
@@ -103,15 +102,8 @@ y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 
 
 % initialize with SoS zero-fill solution
-center_samp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
-F_center = GsplineF(Nx, Ny, 1, Nc, 'samp', center_samp);
-y_center = F_center * Sxtrue(:);
-y_center_noise = y_center + sig*randn(size(y_center)) + 1i*sig*randn(size(y_center));
-zero_fill = reshape(F_center'*y_center_noise, Nx, Ny, Nc)/(Nx * Ny);
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
-% [xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
-%SoS_compensate = sum(conj(sense_maps).*Sxtrue,3)./(sum(abs(sense_maps).^2,3));
 xinit = SoS;
 if 0
         [xinit, scale] = ir_wls_init_scale(A, y_center_noise, SoS);
@@ -123,15 +115,32 @@ if 0
 end
 
 % build mask
-if slice == 67
-	mask = generate_mask('slice67',1,Nx,Ny);
-elseif slice == 38
-	mask = generate_mask('slice38',1,Nx,Ny);
-else
+switch orient
+case 'axial'
+	if slice == 67
+		mask = generate_mask('slice67',1,Nx,Ny);
+	elseif slice == 38
+		mask = generate_mask('slice38',1,Nx,Ny);
+	else
+		mask = true(Nx, Ny);
+	end
+case 'coronal'
+	mask = cat(1, zeros(5, 128), ones(144-13,128), zeros(8,128));
+otherwise
 	mask = true(Nx, Ny);
 end
+
 
 % parameters
 beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
+
+xinf = load_x_inf(slice, beta, curr_folder, slice_str);
+if strcmp(orient, 'sim')
+	mu_args = {'noise', 0.07*max([col(abs(CH*xinf)); col(abs(CV*xinf))])};
+else
+	mu_args = {};
+end
+
+
 
