@@ -129,9 +129,10 @@ end
 % initialize with SoS zero-fill solution
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
 SoS = sqrt(sum(abs(zero_fill).^2,3));
-xinit = SoS.*mask;
+[xinit, scale] = ir_wls_init_scale(F*S, y_noise, SoS);
+xinit = xinit.*mask;
 if 0
-        [xinit, scale] = ir_wls_init_scale(A, y_center_noise, SoS);
+        [xinit, scale] = ir_wls_init_scale(A, y_noise, SoS);
         [xinit_MFIS, scale_MFIS] = ir_wls_init_scale(A, y_center_noise, xMFIS);
         figure; im(cat(1, cat(2, SoS, xinit), cat(2, xMFIS, xinit_MFIS)))
         title(sprintf('SoS scale: %.2d + %.2di, MFISTA scale: %.2d + %.2di',real(scale),imag(scale),real(scale_MFIS),imag(scale_MFIS)))

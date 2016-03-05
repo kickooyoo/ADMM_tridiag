@@ -22,7 +22,7 @@ case 'axial'
 	assert(slice < Nz, sprintf('slice choice %d not possible, only %d slices axially', slice, Nz));
 	mapped_im = squeeze(im4d(:,:,slice,:));
 	body_coil = squeeze(body_coil_images(:,:,slice));
-	d = ifft(fftshift(fftshift(d, 1), 2),[],3);
+	d = ifft(fftshift(d),[],3);
         shift_slice = fftshift(1:Nz);
 	y = squeeze(d(:,:, shift_slice(slice),:));
 case 'sagittal'
