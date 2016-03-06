@@ -1,5 +1,8 @@
 % setup tridiag exp
 
+if ~isvar('use_raw')
+	use_raw = 0;
+end
 truncate = 0;
 wavelets = 0;
 if ~isvar('home_path')
@@ -7,18 +10,21 @@ if ~isvar('home_path')
 end
 
 if ~strcmp(orient, 'sim')
-	switch orient
-		case 'axial'
-			slice = 38;
-			slice = 90;
-		case 'sagittal'
-			slice = 69;
-		case 'coronal'
-			slice = 135; 
-			slice = 155; 
-		otherwise
-			display(sprintf('need to choose slice for %s orientation', orient))
-			keyboard
+	if ~isvar('slice')
+		switch orient
+			case 'axial'
+				slice = 38;
+				%slice = 90;
+				slice = 67;
+			case 'sagittal'
+				slice = 69;
+			case 'coronal'
+				slice = 135; 
+				slice = 155; 
+			otherwise
+				display(sprintf('need to choose slice for %s orientation', orient))
+				keyboard
+		end
 	end
 	if ~isvar('Sxtrue')
 		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient);
@@ -104,7 +110,11 @@ if strcmp(orient, 'sim')
 	y_noise = y + sig*randn(size(y)) + 1i*sig*randn(size(y));
 elseif isvar('y_full')
 %	y_noise = masker(y_full, repmat(fftshift(samp), [1 1 Nc]));
-	y_noise = masker(y_full, repmat(samp, [1 1 Nc]));
+	if use_raw
+		y_noise = masker(y_full, repmat(samp, [1 1 Nc]));
+	else
+		y_noise = F*Sxtrue(:);
+	end
 else
 	display('should have y_noise from invivo_exp');
 	keyboard
@@ -146,7 +156,8 @@ end
 beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
 
-xinf = load_x_inf(slice, beta, curr_folder, slice_str);
+true_opt = 'avg';
+xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
 if strcmp(orient, 'sim')
 	mu_args = {'noise', 0.07*max([col(abs(CH*xinf)); col(abs(CV*xinf))])};
 else

@@ -1,18 +1,4 @@
-if gen
-	exp_setup;
-else
-	switch orient
-		case 'axial'
-			slice = 38;
-		case 'sagittal'
-			slice = 69;
-		case 'coronal'
-			slice = 135; 
-		otherwise
-			display(sprintf('need to choose slice for %s orientation', orient))
-			keyboard
-	end
-end
+exp_setup;
 
 
 %method = 'tridiag';
@@ -21,11 +7,11 @@ if gen
 	niters = 7500;
 	% already done 2.^(3:20);
 	betas = 2.^(19:0.5:23);
-	betas = 2.^(18:24);
+	betas = 2.^(18:27);
 	[bc_sc, sc] = ir_wls_init_scale(F*S, y_noise, body_coil);
 	xinit_tmp = xinit;%zeros(size(xinit));%(xinit + bc_sc)./2;
 else
-	betas = 2.^(16:24);
+	betas = 2.^(16:31);
 end
 xhat_betas = [];
 for ii = 1:length(betas)
@@ -77,4 +63,4 @@ for ii = 1:length(betas)
 	end
 end
 figure; im(xhat_betas);
-if gen, send_mai_text('done searching betas, time to choose beta and gen xinf'); end
+if gen, send_mai_text(sprintf('done searching betas on %s, time to choose beta and gen xinf', machine(1:3))); end

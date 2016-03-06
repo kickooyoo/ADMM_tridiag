@@ -34,7 +34,7 @@ end
 function beta = choose_beta_axial(slice, reduction)
 switch slice
 case 67
-	beta = 2^19;
+	beta = 2^27;
 case 38
 	if reduction <= 8
 		beta = 2^20;
@@ -43,6 +43,8 @@ case 38
 	else
 		beta = 2^20;
 	end
+case 90
+	beta = 2^25;
 otherwise
 	display('unknown which is best beta, choosing 2^20 arbitrarily');
 	beta = 2^20;

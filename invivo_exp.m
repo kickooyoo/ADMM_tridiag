@@ -58,7 +58,7 @@ else
         body_coil_lp = F_center'*F_center*body_coil;
 	display(sprintf('cannot load sense maps for slice %d', slice));
 	display('try est_S_reg')
-	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil);
+	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil, 'l2b', 10);
 	keyboard
 	save(smap_fname, 'sense_maps');
 end
