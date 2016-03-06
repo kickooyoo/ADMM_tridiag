@@ -1,5 +1,5 @@
-function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction)
-%function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction)
+function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw)
+%function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw)
 % for file saving and loading
 
 base = './reviv/';
@@ -20,6 +20,9 @@ case 'coronal'
 otherwise
 	display(sprintf('unknwon orientation %s', orient))
 	keyboard
+end
+if use_raw
+	curr_folder = [curr_folder '_raw'];
 end
 if ~exist(curr_folder, 'dir')
 	fsep = strfind(curr_folder ,'/');

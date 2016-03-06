@@ -42,7 +42,7 @@ if ~isvar('reduction')
 	reduction = 6;%6;
 	display(sprintf('sampling factor set to: %d', reduction));
 end
-[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction);
+[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw);
 
 if ~isvar('samp')
 	% generate sampling pattern
