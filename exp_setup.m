@@ -8,6 +8,7 @@ wavelets = 0;
 if ~isvar('home_path')
 	tridiag_setup;
 end
+force_smap = 1;
 
 if ~strcmp(orient, 'sim')
 	if ~isvar('slice')
@@ -27,7 +28,7 @@ if ~strcmp(orient, 'sim')
 		end
 	end
 	if ~isvar('Sxtrue')
-		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient);
+		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient, 'force_smap', force_smap);
 	end
 else
 	slice = 0;

@@ -3,8 +3,9 @@ db_path = '~/Dropbox/fessler/experimental_data/tridiag_vega/';
 FontSize = 16;
 
 %% axial slice 38 --------------------------------------------------------
-close all; clearvars -except db_path
+clearvars -except db_path
 eval(load_except([db_path 'axial_slice38/ir7_timing_256x144_20000iter_slice38_avgtrue.mat'], 'db_path'))
+%%
 plot_axes = {[0 200 -80 0];[0 2000 -80 0]};
 plot_timing
 short_slice_str = 'ax_38';
@@ -59,14 +60,14 @@ lstring = {'AL-tridiag'; 'AL-tridiag,svt'; 'MFISTA-5';'AL-P2'; 'ADMM-tridiag'; '
 %% axial slice 90 --------------------------------------------------------
 close all; clearvars -except db_path
 eval(load_except([db_path 'axial_slice90/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
-
+%%
 plot_timing
 short_slice_str = 'ax_90';
 lstring = {'AL-tridiag';'MFISTA-5';'AL-P2';'ADMM-tridiag';'ADMM-FP-tridiag'};
 %% axial slice 90 RAW--------------------------------------------------------
-close all; clearvars -except db_path
+clearvars -except db_path
 eval(load_except([db_path 'axial_slice90_raw/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
-
+%%
 plot_timing
 short_slice_str = 'ax_90';
 lstring = {'AL-tridiag';'MFISTA-5';'AL-P2';'ADMM-tridiag';'ADMM-FP-tridiag'};

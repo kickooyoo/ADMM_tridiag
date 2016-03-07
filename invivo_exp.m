@@ -8,6 +8,7 @@ function [sense_maps, body_coil, Sxtrue, y] = invivo_exp(home_path, slice, varar
 
 arg.orient = 'axial';
 arg.base = './reviv';
+arg.force_smap = false;
 arg = vararg_pair(arg, varargin);
 
 fn = [home_path 'Documents/data/2010-07-06-fessler-3d/raw/p23040-3dspgr-8ch.7'];
@@ -49,7 +50,7 @@ elseif strcmp(arg.orient, 'sagittal')
 elseif strcmp(arg.orient, 'coronal')
 	smap_fname = sprintf('%s/coronal/cor_slice%d_smap.mat', arg.base, slice);
 end
-if exist(smap_fname)
+if exist(smap_fname) && ~arg.force_smap
 	load(smap_fname, '*map*'); 
 else
         centersamp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
@@ -58,7 +59,7 @@ else
         body_coil_lp = F_center'*F_center*body_coil;
 	display(sprintf('cannot load sense maps for slice %d', slice));
 	display('try est_S_reg')
-	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil, 'l2b', 10);
+	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil, 'l2b', 4);
 	keyboard
 	save(smap_fname, 'sense_maps');
 end
