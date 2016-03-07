@@ -8,7 +8,7 @@ wavelets = 0;
 if ~isvar('home_path')
 	tridiag_setup;
 end
-force_smap = 1;
+force_smap = 0;
 
 if ~strcmp(orient, 'sim')
 	if ~isvar('slice')
@@ -122,20 +122,7 @@ else
 end
 
 % build mask
-switch orient
-case 'axial'
-	if slice == 67
-		mask = generate_mask('slice67',1,Nx,Ny);
-	elseif slice == 38
-		mask = generate_mask('slice38',1,Nx,Ny);
-	else
-		mask = true(Nx, Ny);
-	end
-case 'coronal'
-	mask = cat(1, zeros(5, 128), ones(144-13,128), zeros(8,128));
-otherwise
-	mask = true(Nx, Ny);
-end
+mask = generate_mask(orient, slice, Nx, Ny);
 
 % initialize with SoS zero-fill solution
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
