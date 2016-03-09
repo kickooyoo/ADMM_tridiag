@@ -88,7 +88,11 @@ end
 
 % construct fatrices
 S = staticS(sense_maps);
-F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', true);
+if strcmp(orient, 'sim') || ~use_raw
+	F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', false);
+else
+	F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', true);
+end
 [CH, CV] = construct_finite_diff([Nx Ny]); 
 R = [CH; CV];
 Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');

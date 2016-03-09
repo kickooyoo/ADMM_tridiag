@@ -14,12 +14,15 @@ save(sprintf('%s/%s_timing_%dx%d_%diter_%s_%strue.mat', curr_folder, machine(1:3
 
 if strcmp(machine(1:3), 'mpe')
 	nthread_vals = int32([1 2 4 10 20 40 80 160]);
-	for ii = 1:length(nthread_vals)
-		nthread = nthread_vals(ii);
-		if ~isvar('xhat_tri')	
+	if ~isvar('xhat_tri')
+		for ii = 1:length(nthread_vals)
+			nthread = nthread_vals(ii);
 			[xhat_tri(:,:,ii), ~, nrmsd_tri(ii,:), costOrig_tri(ii,:), time_tri(ii,:)] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', mu_args, 'nthread', nthread);
 		end
-		if ~isvar('xhat_AL')
+	end
+	if ~isvar('xhat_AL')
+		for ii = 1:length(nthread_vals)
+			nthread = nthread_vals(ii);
 			[xhat_AL(:,:,ii), ~, nrmsd_AL(ii,:), costOrig_AL(ii,:), time_AL(ii,:)] = AL_tridiag(y_noise, F, S, CH, CV, beta, xinit, xinf, niters, 'mu_args', mu_args, 'nthread', nthread);
 		end
 	end

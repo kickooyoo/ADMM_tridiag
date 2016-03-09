@@ -26,7 +26,7 @@ function mask = gen_sim_mask(loose, Nx, Ny)
     assert(Nx <= 258,'Nx too large');
     assert(Ny <= 258,'Ny too large');
     fov = 25;
-    ig = image_geom( 'Nx', 258, 'Ny', 258, 'fov', 25 );
+    ig = image_geom( 'nx', 258, 'ny', 258, 'fov', 25 );
     mask = logical(ig.circ( loose*fov / 2.4, loose*fov / 2.85, -5/fov, -3/fov));
     % crop to Nx x Ny
     extra_x = 258-Nx;
