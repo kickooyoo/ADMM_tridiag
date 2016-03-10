@@ -2,6 +2,7 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 %function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xinit, F, S, lambda, niter, curr_folder, varargin)
 % 
 % wrapper for MFISTA for getting x_inf for tridiagonal ADMM
+	force_new_eig = 0;
 
 	params.Nx = Nx;
 	params.Ny = Ny;
@@ -39,19 +40,20 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 	params.Operator = 'AFD';
 	params.PriorType = 'l1';
 	params.rw = ones(Nx, Ny);
-	params.lambda = lambda; % careful, this is actually 2lambda compared to typical
+	params.lambda = lambda;
 	params.MFISTA.nCG = 5;
 
 	params.N = [Nx Ny];
 
 	mEAWA_fname = [curr_folder '/mEAWA_MFISTA.mat'];
-	if exist(mEAWA_fname)
+	if exist(mEAWA_fname) && ~force_new_eig
 		load(mEAWA_fname)
 	else
 		params.eigtol = eps; % Matlab epsilon
 		params.eigpowermaxitr = 10000;
 		params.eigdispitr = 10;	
 		mEAWA = get_MaxEigenValue_1by1(params, 'AWA'); 
+		keyboard
 		save(mEAWA_fname,'mEAWA');
 	end
 	params.mEAWA = mEAWA;

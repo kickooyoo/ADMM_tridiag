@@ -150,7 +150,7 @@ plain_mu = num2cell(ones(1,5));
 
 true_opt = 'avg';
 xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
-if strcmp(orient, 'sim')
+if strcmp(orient, 'sim') && ~isscalar(xinf)
 	mu_args = {'noise', 0.07*max([col(abs(CH*xinf)); col(abs(CV*xinf))])};
 else
 	mu_args = {};

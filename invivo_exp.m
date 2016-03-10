@@ -62,8 +62,8 @@ else
 	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil, 'l2b', 6);
 	mask = generate_mask(arg.orient, slice, Nx, Ny);
 	sense_maps = truncate_sense_maps(sense_maps, mask);
-	keyboard
 	save(smap_fname, 'sense_maps');
+	display('saved new sense map');
 end
 if ~isvar('sense_maps') && isvar('Smap_QPWLS')
 	sense_maps = Smap_QPWLS;
