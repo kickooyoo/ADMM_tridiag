@@ -1,5 +1,5 @@
-function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw)
-%function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw)
+function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw, truncate)
+%function [slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw, truncate)
 % for file saving and loading
 
 base = './reviv/';
@@ -23,6 +23,9 @@ otherwise
 end
 if use_raw
 	curr_folder = [curr_folder '_raw'];
+end
+if truncate
+	curr_folder = [curr_folder '_truncate'];
 end
 if ~exist(curr_folder, 'dir')
 	fsep = strfind(curr_folder ,'/');

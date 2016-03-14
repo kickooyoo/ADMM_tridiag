@@ -1,12 +1,12 @@
 clear;
 tridiag_setup;
 
-%orient = 'axial'; slice = 38;
-%exp_ADMM_ALP2;
-%display('done with slice 38')
-orient = 'axial';
-clearvars -except orient
-orient = 'axial'; slice = 90;
+orient = 'axial'; slice = 38; truncate = 2;
+exp_ADMM_ALP2;
+display('done with slice 38')
+
+orient = 'axial'; slice = 90; truncate = 2;
+
 exp_ADMM_ALP2;
 display('done with slice 90');
 
