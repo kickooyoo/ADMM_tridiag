@@ -50,6 +50,7 @@ elseif strcmp(arg.orient, 'sagittal')
 elseif strcmp(arg.orient, 'coronal')
 	smap_fname = sprintf('%s/coronal/cor_slice%d_smap.mat', arg.base, slice);
 end
+smap_fname
 if exist(smap_fname) && ~arg.force_smap
 	load(smap_fname, '*map*'); 
 else

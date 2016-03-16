@@ -52,17 +52,19 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 		params.eigtol = eps; % Matlab epsilon
 		params.eigpowermaxitr = 10000;
 		params.eigdispitr = 10;	
+                tic
 		mEAWA = get_MaxEigenValue_1by1(params, 'AWA'); 
+                toc
 		keyboard
 		save(mEAWA_fname,'mEAWA');
-	end
+ 	end
 	params.mEAWA = mEAWA;
 	params.xinf = zeros(Nx,Ny); 
 	params.xinfnorm = 1;
 
 	params = vararg_pair(params, varargin);
 	
-	[xMFIS CMFIS TFIS l2DFIS RMSEFIS] = runMFISTA(data, AWy, xini, params);
+	[xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = runMFISTA(data, AWy, xini, params);
 	if norm(xMFIS - xini) == 0
 		display('problem: MFISTA did nothing, check mEAWA and dgrad sign');
 		keyboard;
