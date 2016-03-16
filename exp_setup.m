@@ -160,8 +160,17 @@ end
 beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
 
-true_opt = 'avg';
-xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
+true_opt = 'true';
+if strcmp(true_opt, 'true')
+	if strcmp(orient, 'sim')
+		xinf = body_coil;%sos_combine(permute(Sxtrue, [1 2 4 3]));
+	else
+		sense_sq = sum(abs(sense_maps).^2,3);
+		xinf = sum(conj(sense_maps).*Sxtrue, 3)./sense_sq;
+	end
+else
+	xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
+end
 if strcmp(orient, 'sim') && ~isscalar(xinf)
 	mu_args = {'noise', 0.07*max([col(abs(CH*xinf)); col(abs(CV*xinf))])};
 else

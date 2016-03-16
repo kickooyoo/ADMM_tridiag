@@ -1,7 +1,9 @@
 % experimental data for tridiag_ADMM
 
 exp_setup;
-niters = 5000;
+if ~isvar('niters')
+	niters = 5000;
+end
 
 %for ii = 1:1%3%5
 %        [xhat_alp2t(:,:,ii), ~, nrmsd_alp2t(ii,:), costOrig_alp2t(ii,:), time_alp2t(ii,:)] = AL_P2_gen(y_noise, F, S, R, xinit, niters, beta, xinf,'inner_iter', ii, 'mask', mask);
@@ -15,6 +17,7 @@ save(sprintf('%s/%s_timing_%dx%d_%diter_%s_%strue.mat', curr_folder, machine(1:3
 nthread_vals = int32([1 2 4 8 20 40 80 160]);
 max_thread = jf('ncore');
 nthread_vals = nthread_vals(nthread_vals <= 2*max_thread);
+nthread_vals = 2;
 if ~isvar('xhat_tri')
 	for ii = 1:length(nthread_vals)
 		nthread = nthread_vals(ii);

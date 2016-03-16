@@ -151,10 +151,10 @@ for iter = 1:niters
         u0 = shrinkx(CH * x - eta0, beta./mu0);
         u1 = shrinky(CV * u3 - eta1, beta./mu1);
         u2 = u2_update(mu2, arg.alph, eig_FF, Qbig, F, S, y, u3, x, eta2, arg.parFFT);
-	tridiag_tic = tic;
+	if strcmp(arg.timing, 'tridiag'), tridiag_tic = tic; end
         u3 = u3_update_mex(mu1, mu2, mu3, arg.alph, eig_SS, CV, S, u1, u2, x, v3, eta1, eta2, eta3, subCCT, diagCCT, arg.nthread);
         x = x_update(mu0, mu2, mu4, arg.alph, eig_SS, CH, S, u0, u2, u3, v4, eta0, eta2, eta4, subCC, diagCC, arg.nthread);
-        tridiag_time(iter + 1) = toc(tridiag_tic);
+	if strcmp(arg.timing, 'tridiag'), tridiag_time(iter + 1) = toc(tridiag_tic); end
 
         % skip v0, v1, v2 because they are constrained to be zero
         v3 = (mu3(:) .* (-u3 - eta3) + mu4(:) .* (-x + eta4)) ./ col(mu3 + mu4);
