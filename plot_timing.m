@@ -1,6 +1,10 @@
 colors = 'cmgkbry';
 markers = 'ox+sd*.^v><ph';
+<<<<<<< HEAD
 % markers = '-';
+=======
+%markers = '-';
+>>>>>>> 30b803c31ccfabd8a6f906123705ca3e682028a9
 exps = who('time*');
 start_ndx = 1;
 end_ndx = niters+1;
@@ -26,11 +30,11 @@ for ii = 1:length(exps)
                 eval(sprintf('%s = %s.'';', curr_name, curr_name));
                 eval(sprintf('%s%s = %s%s.'';', y_val, suffix, y_val, suffix));
         end
-	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
-		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
-	else
+ 	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
+ 		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
+ 	else
 		Nd = 1;
-	end
+ 	end
 	if eval(sprintf('size(%s, 1) == niters + 1', curr_name))
 		indeces = 'start_ndx:end_ndx,jj';
 	else

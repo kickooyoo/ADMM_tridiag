@@ -52,9 +52,9 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 		params.eigtol = eps; % Matlab epsilon
 		params.eigpowermaxitr = 10000;
 		params.eigdispitr = 10;	
-                tic
+		tic
 		mEAWA = get_MaxEigenValue_1by1(params, 'AWA'); 
-                toc
+		toc
 		keyboard
 		save(mEAWA_fname,'mEAWA');
  	end

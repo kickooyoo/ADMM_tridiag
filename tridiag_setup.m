@@ -39,7 +39,7 @@ switch machine(1:end-1) % last char is some sort of new line
 	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
-    case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu'}
+    case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu', 'ir71.eecs.umich.edu'}
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
         addpath(genpath('~/iv1h/Documents/mai_code/util'))
@@ -49,6 +49,9 @@ switch machine(1:end-1) % last char is some sort of new line
 	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
+	if ~isempty(strfind(machine, 'ir71'))
+		machine = 'r71';
+	end
     case 'vega'
         addpath('/Users/mai/Documents/irt')
 	addpath('/Users/mai/Documents/irt/contrib/ramani/al-p2');
