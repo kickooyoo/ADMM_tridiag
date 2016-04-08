@@ -7,7 +7,7 @@ nc = 4;
 
 img = make_sim_image(nx,ny);
 sense_maps = mri_sensemap_sim('nx', nx, 'ny', ny, 'ncoil', nc, 'rcoil', 3*ny);
-% samp = gen_poisson_sampling_pattern('2D',[nx ny], [floor(nx/6) floor(ny/6)],6); % CAUTION: concatenating real poisson disk samplings
+% samp = gen_poisson_sampling_pattern('2D',[nx ny], [floor(nx/6) floor(ny/6)],6); 
 params.Nx = nx;
 params.Ny = ny;
 params.Nf = 1;
@@ -17,13 +17,27 @@ samp = logical(gen_new_sampling_pattern(params, 'all_kspace', 0));
 
 imgs = repmat(img,[1 1 nc]).*sense_maps;
 % S = construct_sensefat(sense_maps);
-S = GsplineS(sense_maps, 1);
+S = staticS(sense_maps);
 
 % subsampling Fourier encoding matrix F
 % F = construct_fourierfat(samp,nc);
-F = GsplineF(nx, ny, 1, nc, 'samp', samp);
+F = staticF(nx, ny, nc, 'samp', samp);
 
-rng(0);
+SFFS = full(S'*F'*F*S);
+%%
+%% 
+params.N = [nx ny];
+params.A = F*S;
+params.W = ones(prod(F.odim), 1);
+params.eigtol = eps; % Matlab epsilon
+params.eigpowermaxitr = 10000;
+params.eigdispitr = 10;
+mEAWA = get_MaxEigenValue_1by1(params, 'AWA');
+[V, D] = eig(SFFS);
+return
+%% 
+
+rng('default');
 y = F*(S*img(:));
 snr = 40; % specify desired SNR (of sampled values!) in dB
 snr = 80;
@@ -48,6 +62,11 @@ xinit = reshape(xzfill, nx, ny);
 pot = potential_fun('quad');
 
 R = [C1; C2];
+curr_folder = '.';
+[xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(nx, ny, R, noisey, xinit, F, S, beta, niters, curr_folder);
+
+return
+%%
 % A_bs = [sqrt(1/2)*full(F*S); sqrt(beta)*full(R)];
 % y_bs = [sqrt(1/2)*col(y); zeros(size(R*xinit(:)))];
 % xhat_bs = reshape(A_bs\y_bs, nx, ny);

@@ -3,12 +3,14 @@
 if ~isvar('use_raw')
 	use_raw = 0;
 end
-truncate = 0;
 wavelets = 0;
 if ~isvar('home_path')
 	tridiag_setup;
 end
-
+force_smap = 0;
+if ~isvar('truncate')
+	truncate = 0;
+end
 if ~strcmp(orient, 'sim')
 	if ~isvar('slice')
 		switch orient
@@ -27,28 +29,39 @@ if ~strcmp(orient, 'sim')
 		end
 	end
 	if ~isvar('Sxtrue')
-		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient);
+		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient, 'force_smap', force_smap);
 	end
 else
 	slice = 0;
 	[sense_maps, body_coil, Sxtrue] = sim_setup();
 end
 
-[Nx, Ny, Nc] = size(Sxtrue);
 
-if truncate
+if truncate == 1
 	Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
 	sense_maps = sense_maps(3:end-2, 3:end-2, :);
 	body_coil = body_coil(3:end-2, 3:end-2);
-	[Nx, Ny] = size(body_coil);
+	if use_raw
+		display('cannot use raw data if truncate');
+		use_raw = 0;
+	end
+elseif truncate == 2
+	Sxtrue = Sxtrue(:, 9:end-8, :);
+	sense_maps = sense_maps(:, 9:end-8, :);
+	body_coil = body_coil(:, 9:end-8, :);
+	if use_raw
+		display('cannot use raw data if truncate');
+		use_raw = 0;
+	end
 end
+[Nx, Ny, Nc] = size(Sxtrue);
 
 % make sampling pattern
 if ~isvar('reduction')
 	reduction = 6;%6;
 	display(sprintf('sampling factor set to: %d', reduction));
 end
-[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw);
+[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw, truncate);
 
 if ~isvar('samp')
 	% generate sampling pattern
@@ -87,7 +100,11 @@ end
 
 % construct fatrices
 S = staticS(sense_maps);
-F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', true);
+if strcmp(orient, 'sim') || ~use_raw
+	F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', false);
+else
+	F = staticF(Nx, Ny, Nc, 'samp', samp, 'shift_img', true);
+end
 [CH, CV] = construct_finite_diff([Nx Ny]); 
 R = [CH; CV];
 Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
@@ -121,20 +138,7 @@ else
 end
 
 % build mask
-switch orient
-case 'axial'
-	if slice == 67
-		mask = generate_mask('slice67',1,Nx,Ny);
-	elseif slice == 38
-		mask = generate_mask('slice38',1,Nx,Ny);
-	else
-		mask = true(Nx, Ny);
-	end
-case 'coronal'
-	mask = cat(1, zeros(5, 128), ones(144-13,128), zeros(8,128));
-otherwise
-	mask = true(Nx, Ny);
-end
+mask = generate_mask(orient, slice, Nx, Ny);
 
 % initialize with SoS zero-fill solution
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
@@ -156,9 +160,18 @@ end
 beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
 
-true_opt = 'avg';
-xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
-if strcmp(orient, 'sim')
+true_opt = 'true';
+if strcmp(true_opt, 'true')
+	if strcmp(orient, 'sim')
+		xinf = body_coil;%sos_combine(permute(Sxtrue, [1 2 4 3]));
+	else
+		sense_sq = sum(abs(sense_maps).^2,3);
+		xinf = sum(conj(sense_maps).*Sxtrue, 3)./sense_sq;
+	end
+else
+	xinf = load_x_inf(slice, beta, curr_folder, slice_str, 'method', true_opt);
+end
+if strcmp(orient, 'sim') && ~isscalar(xinf)
 	mu_args = {'noise', 0.07*max([col(abs(CH*xinf)); col(abs(CV*xinf))])};
 else
 	mu_args = {};

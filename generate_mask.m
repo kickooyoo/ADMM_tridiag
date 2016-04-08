@@ -1,30 +1,36 @@
-function mask = generate_mask(im_type,loose,nx,ny);
+function mask = generate_mask(orient, slice, Nx, Ny, varargin);
+%function mask = generate_mask(orient, slice, Nx, Ny, varargin)
+% varragin:
+% 	loose (scalar), if > 1, makes mask roomier
+%		default: 1
 
-% im_type describes whether I am working with the simulated brainweb image,
-% or the real data. The position and ratios are hard-coded in...
+arg.loose = 1;
+arg = vararg_pair(arg, varargin);
 
-switch im_type
-    case {'sim','brainweb'}
-        mask = gen_sim_mask(loose,nx,ny);
-    case {'slice38'}
-        mask = gen_slice38_mask(loose,nx,ny);
-    case {'slice67'}
-        mask = gen_slice67_mask(loose,nx,ny);
-    otherwise
-        error('invalid im_type');
+switch orient
+case 'axial'
+	mask = gen_axial_mask(slice, arg.loose, Nx, Ny);
+case 'sim'
+	mask = gen_sim_mask(arg.loose, Nx, Ny);
+case 'coronal'
+	mask = cat(1, zeros(5, 128), ones(144-13,128), zeros(8,128));
+	display('warning: poor man coronal mask');
+otherwise
+	display(sprintf('no mask determined for %s orientation, using all true', orient));
+	mask = true(Nx, Ny);
 end
         
 end
 
-function mask = gen_sim_mask(loose,nx,ny)
-    assert(nx <= 258,'nx too large');
-    assert(ny <= 258,'ny too large');
+function mask = gen_sim_mask(loose, Nx, Ny)
+    assert(Nx <= 258,'Nx too large');
+    assert(Ny <= 258,'Ny too large');
     fov = 25;
     ig = image_geom( 'nx', 258, 'ny', 258, 'fov', 25 );
     mask = logical(ig.circ( loose*fov / 2.4, loose*fov / 2.85, -5/fov, -3/fov));
-    % crop to nx x ny
-    extra_x = 258-nx;
-    extra_y = 258-ny;
+    % crop to Nx x Ny
+    extra_x = 258-Nx;
+    extra_y = 258-Ny;
     if (mod(extra_x,2) == 0)
         mask = mask(1+extra_x/2:end-extra_x/2,:);
     else
@@ -37,16 +43,25 @@ function mask = gen_sim_mask(loose,nx,ny)
     end
 end
 
-% to do: let crop to nx x ny
-function mask = gen_slice38_mask(loose,nx,ny)
-    fov = 25;
-    ig = image_geom( 'nx', nx, 'ny', ny, 'fov', 25 );
-    mask = logical(ig.circ( loose*fov/2.3, loose*fov/4, -4/fov, 2/fov));
+function mask = gen_axial_mask(slice, loose, Nx, Ny)
+fov = 25;
+ig = image_geom('nx', Nx, 'ny', Ny, 'fov', fov);
+
+% to do: let crop to Nx x Ny
+switch slice
+case 38
+	mask = logical(ig.circ( loose*fov/2.3, loose*fov/4, -4/fov, 2/fov));
+
+case 67
+	mask = logical(ig.circ( loose*fov/2.5, loose*fov/4, -4/fov, 2/fov));
+
+case 90
+	mask = logical(ig.circ( loose*fov/2.7, loose*fov/4.2, 0/fov, 4/fov));
+
+otherwise
+	display(sprintf('no mask determined for axial slice %d, using all true', slice));
+	mask = true(Nx, Ny);
 end
 
-% to do: let crop to nx x ny
-function mask = gen_slice67_mask(loose,nx,ny)
-    fov = 25;
-    ig = image_geom( 'nx', nx, 'ny', ny, 'fov', 25 );
-    mask = logical(ig.circ( loose*fov/2.5, loose*fov/4, -4/fov, 2/fov));
 end
+
