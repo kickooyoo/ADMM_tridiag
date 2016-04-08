@@ -3,7 +3,7 @@
 nfs_broken = true;
 [~, machine] = system('hostname');
 
-nfs_broken = ~exist('iv1h', 'dir') && ...
+nfs_broken = ~exist('~/iv1h', 'dir') && ...
         isempty([strfind(lower(machine), 'iv1') strfind(lower(machine), 'vega')]);
 if nfs_broken
 	machine = 'iv1.';
