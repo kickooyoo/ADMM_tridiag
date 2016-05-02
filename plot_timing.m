@@ -52,9 +52,9 @@ for kk = 1:length(exps)
 	curr_color = colors(mod(kk, length(colors)) + 1);
 	for jj = 1:Nd
                 if plot_ndx == 1
-                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'');', curr_name, indeces, tcomp, y_val, suffix, indeces, curr_color, '-');
+                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'');', curr_name, indices, tcomp, y_val, suffix, indices, curr_color, '-');
                 else
-                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'');', y_val, suffix, indeces, curr_color, '-');
+                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'');', y_val, suffix, indices, curr_color, '-');
                 end
                 try
                         eval(plot_command);
@@ -70,10 +70,10 @@ for kk = 1:length(exps)
         end
         if eval(sprintf('size(%s, 1) == niters + 1', curr_name))
 		orn_index = 'orn_ndx,jj';
-                orn_indeces = 'start_ndx:orn_ndx,jj';
+                orn_indices = 'start_ndx:orn_ndx,jj';
 	else
 		orn_index = 'jj,orn_ndx';
-                orn_indeces = 'jj,start_ndx:orn_ndx';
+                orn_indices = 'jj,start_ndx:orn_ndx';
         end
 %         if start_ndx == 1
 %                 tcomp = sprintf(' - %s(1)', curr_name);
@@ -82,7 +82,7 @@ for kk = 1:length(exps)
         for jj = 1:Nd
 		curr_marker = markers(mod(kk, length(markers)) + 1);
                 if plot_ndx == 1
-                        plot_command = sprintf('h(kk,2) = plot(sum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'', ''MarkerFaceColor'', ''%s'', ''MarkerSize'', MarkerSize);', curr_name, orn_indeces, tcomp, y_val, suffix, orn_index, curr_color, curr_marker, curr_color);
+                        plot_command = sprintf('h(kk,2) = plot(sum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'', ''MarkerFaceColor'', ''%s'', ''MarkerSize'', MarkerSize);', curr_name, orn_indices, tcomp, y_val, suffix, orn_index, curr_color, curr_marker, curr_color);
                 else
                         plot_command = sprintf('h(kk,2) = plot(orn_ndx, xform(%s%s(%s)), ''%s%s'', ''MarkerFaceColor'', ''%s'', ''MarkerSize'', MarkerSize);', y_val, suffix, orn_index, curr_color, curr_marker, curr_color);
                 end
