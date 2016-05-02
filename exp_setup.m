@@ -30,30 +30,47 @@ if ~strcmp(orient, 'sim')
 	end
 	if ~isvar('Sxtrue')
 		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient, 'force_smap', force_smap);
+		if truncate == 1
+			Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
+			sense_maps = sense_maps(3:end-2, 3:end-2, :);
+			body_coil = body_coil(3:end-2, 3:end-2);
+			if use_raw
+				display('cannot use raw data if truncate');
+				use_raw = 0;
+			end
+		elseif truncate == 2
+			Sxtrue = Sxtrue(:, 9:end-8, :);
+			sense_maps = sense_maps(:, 9:end-8, :);
+			body_coil = body_coil(:, 9:end-8, :);
+			if use_raw
+				display('cannot use raw data if truncate');
+				use_raw = 0;
+			end
+		end
 	end
 else
 	slice = 0;
 	[sense_maps, body_coil, Sxtrue] = sim_setup();
+	if truncate == 1
+		Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
+		sense_maps = sense_maps(3:end-2, 3:end-2, :);
+		body_coil = body_coil(3:end-2, 3:end-2);
+		if use_raw
+			display('cannot use raw data if truncate');
+			use_raw = 0;
+		end
+	elseif truncate == 2
+		Sxtrue = Sxtrue(:, 9:end-8, :);
+		sense_maps = sense_maps(:, 9:end-8, :);
+		body_coil = body_coil(:, 9:end-8, :);
+		if use_raw
+			display('cannot use raw data if truncate');
+			use_raw = 0;
+		end
+	end
 end
 
 
-if truncate == 1
-	Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
-	sense_maps = sense_maps(3:end-2, 3:end-2, :);
-	body_coil = body_coil(3:end-2, 3:end-2);
-	if use_raw
-		display('cannot use raw data if truncate');
-		use_raw = 0;
-	end
-elseif truncate == 2
-	Sxtrue = Sxtrue(:, 9:end-8, :);
-	sense_maps = sense_maps(:, 9:end-8, :);
-	body_coil = body_coil(:, 9:end-8, :);
-	if use_raw
-		display('cannot use raw data if truncate');
-		use_raw = 0;
-	end
-end
 [Nx, Ny, Nc] = size(Sxtrue);
 
 % make sampling pattern

@@ -36,7 +36,9 @@ switch slice
 case 67
 	beta = 2^27;
 case 38
-	if reduction <= 8
+	if reduction == 6
+		beta = 2^21;
+	elseif reduction <= 8
 		beta = 2^20;
 	elseif reduction == 12
 		beta = 2^18;

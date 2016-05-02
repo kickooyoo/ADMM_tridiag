@@ -29,9 +29,9 @@ for ii = 1:length(exps)
 		Nd = 1;
  	end
 	if eval(sprintf('size(%s, 1) == niters + 1', curr_name))
-		indeces = 'start_ndx:end_ndx,jj';
+		indices = 'start_ndx:end_ndx,jj';
 	else
-		indeces = 'jj,start_ndx:end_ndx';
+		indices = 'jj,start_ndx:end_ndx';
         end
         if start_ndx == 1
                 tcomp = sprintf(' - %s(1)', curr_name);
@@ -40,9 +40,9 @@ for ii = 1:length(exps)
 	for jj = 1:Nd
 		curr_marker = markers(mod(jj, length(markers)) + 1);
                 if plot_ndx == 1
-                        plot_command = sprintf('plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'')', curr_name, indeces, tcomp, y_val, suffix, indeces, curr_color, curr_marker);
+                        plot_command = sprintf('plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'')', curr_name, indices, tcomp, y_val, suffix, indices, curr_color, curr_marker);
                 else
-                        plot_command = sprintf('plot(xform(%s%s(%s)), ''%s%s'')', y_val, suffix, indeces, curr_color, curr_marker);
+                        plot_command = sprintf('plot(xform(%s%s(%s)), ''%s%s'')', y_val, suffix, indices, curr_color, curr_marker);
                 end
                 try
                         eval(plot_command);

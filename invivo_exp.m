@@ -43,6 +43,7 @@ end
 
 if strcmp(arg.orient, 'axial') && (slice == 38)
 	smap_fname = sprintf('%sDocuments/data/2010-07-06-fessler-3d/slice38/ramani/Smaps%d.mat', home_path, slice);
+	smap_fname = sprintf('%s/axial/axial_slice%d_smap.mat', arg.base, slice);
 elseif strcmp(arg.orient, 'axial')
 	smap_fname = sprintf('%s/axial/axial_slice%d_smap.mat', arg.base, slice);
 elseif strcmp(arg.orient, 'sagittal')
@@ -53,7 +54,7 @@ end
 if exist(smap_fname) && ~arg.force_smap
 	load(smap_fname, '*map*'); 
 else
-        centersamp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 16, 16));
+        centersamp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 8, 8));
         F_center = staticF(Nx, Ny, 1, 'samp', centersamp);
         mapped_im_lp = F_center'*F_center*mapped_im;
         body_coil_lp = F_center'*F_center*body_coil;

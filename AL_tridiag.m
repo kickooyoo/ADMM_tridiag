@@ -106,7 +106,7 @@ eta0 = zeros(size(u0));
 eta1 = zeros(size(u1));
 eta2 = zeros(size(u2));
 eta3 = zeros(size(u3));
-% renaming to match paper indeces
+% renaming to match paper indices
 mu0 = arg.mu{1};
 mu1 = arg.mu{2};
 mu2 = arg.mu{3};
