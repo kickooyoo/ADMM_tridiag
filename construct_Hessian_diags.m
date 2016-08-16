@@ -1,5 +1,13 @@
 function [subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu3, mu4, Nx, Ny, beta, varargin)
-
+% function [subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu3, mu4, Nx, Ny, beta, varargin)
+%
+% allows mu3, mu4 to be diagonal
+% 
+% subCC = - mu0 * I
+% diagCC = mu0 * Ch'*Ch + mu4 + mu0 * betaw * alphw / beta
+%
+% subCCT = - mu1 * I
+% diagCCT = m1 * Cv'*Cv + mu3 + mu1 * betaw * (1-alphw) / beta
 arg.betaw = 0;
 arg.alphw = 0.5;
 arg = vararg_pair(arg, varargin);
@@ -11,8 +19,8 @@ if ~isscalar(mu4)
 end
 
 % pass tridiag of C'C into mex
-Wconst = arg.betaw * arg.alphw / beta;
-WVconst = arg.betaw * (1-arg.alphw) / beta;
+Wconst = arg.betaw * arg.alphw ./ beta;
+WVconst = arg.betaw * (1-arg.alphw) ./ beta;
 if ~isscalar(mu0) || ~isscalar(mu1);
 	subCCT = single(-mu1(:,1:end-1).' .* ones(Ny - 1, Nx)); % tranpose dims 
 	subCC = single(-mu0(1:end-1,:) .* ones(Nx - 1, Ny));

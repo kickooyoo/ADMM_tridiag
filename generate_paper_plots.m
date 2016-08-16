@@ -1,19 +1,19 @@
 % script for making plots and images on vega
-db_path = '~/Dropbox/fessler/experimental_data/tridiag_vega/';
-FontSize = 16;
-FP = 1;
+db_path = '~/Dropbox/fessler/writing/tridiag/';
+FontSize = 28;
+FP_incl = 0;
 %% axial slice 38 --------------------------------------------------------
-clearvars -except db_path FontSize FP
+clearvars -except db_path FontSize FP_incl
 % eval(load_except([db_path 'axial_slice38/ir7_timing_256x144_20000iter_slice38_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice38_raw/ir6_timing_256x144_20000iter_slice38_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice38/mpe_timing_256x144_5000iter_slice38_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice38_truncate/mpe_timing_256x128_5000iter_slice38_avgtrue.mat'], 'db_path'))
-if 1
+if 0
         eval(load_except([db_path 'axial_slice38_truncate/ir7_timing_256x128_5000iter_slice38_avgtrue.mat'], 'db_path'))
         clear time*inf
         orn_ndx = 800;
         plot_axes = {[0 200 -88 0];[0 3000 -88 0]};
-        if FP
+        if FP_incl
                 short_slice_str = 'ax_38';
                 order = [5 2 3 4 1];
         else
@@ -28,7 +28,7 @@ else
         clear time*inf
         orn_ndx = 50;
         plot_axes = {[0 8 -20 0];[0 150 -20 0]};
-        if FP
+        if FP_incl
                 short_slice_str = 'ax_38_err';
                 order = [5 2 3 4 1];
         else
@@ -110,7 +110,7 @@ short_slice_str = 'sa_69';
 lstring = {'AL-tridiag'; 'AL-tridiag,svt'; 'MFISTA-5';'AL-P2'; 'ADMM-tridiag'; 'ADMM-FP-tridiag'};
 plot_timing
 %% axial slice 90 --------------------------------------------------------
-clearvars -except db_path FontSize order FP
+clearvars -except db_path FontSize order FP_incl
 % eval(load_except([db_path 'axial_slice90/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice90_raw/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice90/mpe_timing_256x144_5000iter_slice90_avgtrue.mat'], 'db_path'))
@@ -118,7 +118,7 @@ if 1
         eval(load_except([db_path 'axial_slice90_truncate/ir7_timing_256x128_5000iter_slice90_avgtrue.mat'], 'db_path'))
         orn_ndx = 400;
         plot_axes = {[0 130 -84 0];[0 1400 -84 0]};
-        if FP
+        if FP_incl
                 short_slice_str = 'ax_90';
                 order = [5 2 3 4 1];
         else
@@ -132,9 +132,9 @@ else
         eval(load_except([db_path 'axial_slice90_truncate/ir7_timing_256x128_5000iter_slice90_truetrue.mat'], 'db_path'))
         orn_ndx = 30;
         plot_axes = {[0 4 -23 0];[0 65 -23 0]};
-        if FP 
-        short_slice_str = 'ax_90_err';
-        order = [5 2 3 4 1];
+        if FP_incl
+                short_slice_str = 'ax_90_err';
+                order = [5 2 3 4 1];
         else
                 clear *FP
                 short_slice_str = 'ax_90_err_noFP';

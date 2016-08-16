@@ -7,7 +7,8 @@ end
 if ~isvar('ystr')
         ystr = 'NRMSD to x^{(\infty)} (dB)';
 end
-MarkerSize = 8;
+MarkerSize = 16;
+LineWidth = 2;
 exps = who('time*');
 start_ndx = 1;
 end_ndx = niters+1;
@@ -52,9 +53,9 @@ for kk = 1:length(exps)
 	curr_color = colors(mod(kk, length(colors)) + 1);
 	for jj = 1:Nd
                 if plot_ndx == 1
-                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'');', curr_name, indices, tcomp, y_val, suffix, indices, curr_color, '-');
+                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', curr_name, indeces, tcomp, y_val, suffix, indeces, curr_color, '-', LineWidth);
                 else
-                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'');', y_val, suffix, indices, curr_color, '-');
+                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', y_val, suffix, indeces, curr_color, '-', LineWidth);
                 end
                 try
                         eval(plot_command);

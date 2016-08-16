@@ -4,6 +4,7 @@ function [C1, C2] = construct_finite_diff(dims);
 % assume dims is 1x2 vector
 % todo: what if for dynamic? Then need to add option so don't regularize in 3rd
 % dim
+% no wrap around on edges
 
 
 % output is sparse matrices
