@@ -138,12 +138,16 @@ for iter = 1:niters
         u1 = shrinky(CV * u2 - eta1, beta./mu1);
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
+        try
         u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, ...
                 eta1, eta2, subCCT, diagCCT, arg.nthread);
         if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
         x = x_update(mu0, mu2, arg.alph, eig_DD, CH, D, y, u0, u2, ...
                 eta0, eta2, subCC, diagCC, arg.nthread);
         if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
+        catch
+                keyboard
+        end
         tridiag_time(iter + 1) = toc(tridiag_tic);
         
         if arg.debug

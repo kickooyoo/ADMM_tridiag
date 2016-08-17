@@ -3,13 +3,18 @@
 fnames = {'autumn.tif'; 'bag.png'; 'cell.tif'; 'circuit.tif'; 'forest.tif'; ...
         'glass.png'; 'hands1.jpg'; 'lighthouse.png'; 'office_5.jpg'; ...
         'onion.png'; 'pout.tif'; 'rice.png'; 'toysnoflash.png'; 'trees.tif'};
+fnames = {'textbook.jpg'};
+
 betas = [0.02 0.02 0.02 0.02 0.2 0.02 0.02 0.02 0.02 0.2 0.02 0.02 0.02 0.02];
-for ii = 6%[4 6 10]
+for ii = 1%[4 6 10]
         fname = fnames{ii};
         xtrue = imread(fname);
+        xtrue = xtrue(1:4:end,1:4:end,:);
         if size(xtrue, 3) > 1
                 xtrue = rgb2gray(xtrue);
         end
+        
+        
         % make even dimensions
         if mod(size(xtrue, 1), 2) == 1
                 xtrue = xtrue(2:end, :);
@@ -35,14 +40,14 @@ for ii = 6%[4 6 10]
         mu0 = 1;%samp + 0.1;
         mu1 = mu0;
         %%
-        % [x, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CH, CV, ...
-        %         beta, xinit, xtrue, niters, 'mu', {mu0, mu1, 1});
+%         [x, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CH, CV, ...
+%                 beta, xinit, xtrue, niters, 'mu', {mu0, mu1, 1});
         % figure; im(x)
         % calc_NRMSE_over_mask(x, xtrue, true(size(x)))
         % calc_NRMSE_over_mask(x, xtrue, ~samp)
-        %
-        % [x2, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CH, CV, ...
-        %         beta_small, xinit, xtrue, niters, 'mu', {mu0, mu1, 1});
+%         %
+%         [x2, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CH, CV, ...
+%                 beta_small, xinit, xtrue, niters, 'mu', {mu0, mu1, 1});
         % figure; im(x2)
         % calc_NRMSE_over_mask(x2, xtrue, true(size(x)))
         % calc_NRMSE_over_mask(x2, xtrue, ~samp)
@@ -60,12 +65,12 @@ for ii = 6%[4 6 10]
         
         for jj = 1:length(beta_smalls)
                 beta_small = beta_smalls(jj);
-        [x(:,:,jj), xsave, err(:,ii,jj), costOrig, time(:,ii,jj)] = AL_P2_inpainting(y, D, R, ...
-                xinit, niters, beta_small, xtrue, 'mu', {1, 1});
+        [x(:,:,jj), xsave, err(:,ii,jj), costOrig, time(:,ii,jj)] = AL_tridiag_inpaint(y, D, CH, CV, ...
+                xinit, niters, beta_small, xtrue, 'mu', {1, 1, 1});
 %         figure; subplot(1,2,1); im(x); subplot(1,2,2); im(x - xtrue);
-        
-        [x_P2, xsave_P2, err_P2(:,ii,jj), costOrig_P2, time_P2(:,ii,jj)] = AL_P2_inpainting(y, D, R, ...
-                xinit, niters, beta_small, xtrue, 'mu',  {1, 1});
+%         
+%         [x_P2, xsave_P2, err_P2(:,ii,jj), costOrig_P2, time_P2(:,ii,jj)] = AL_P2_inpainting(y, D, R, ...
+%                 xinit, niters, beta_small, xtrue, 'mu',  {1, 1});
         
 
         [x_circ(:,:,jj), xsave_circ, err_circ(:,ii,jj), costOrig_circ, time_circ(:,ii,jj)] = AL_P2_inpainting(y, D, Rcirc, ...
