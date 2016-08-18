@@ -26,16 +26,19 @@ case 'axial'
 	d = ifft(fftshift(d),[],3);
         shift_slice = fftshift(1:Nz);
 	y = squeeze(d(:,:, shift_slice(slice),:));
+	dims = [Nx Ny];
 case 'sagittal'
 	assert(slice < Ny, sprintf('slice choice %d not possible, only %d slices sagitally', slice, Ny));
 	mapped_im = squeeze(im4d(:,slice,:,:));
 	body_coil = squeeze(body_coil_images(:,slice,:));
 	y = squeeze(d(:,slice,:,:));
+	dims = [Nx Nz];
 case 'coronal'
 	assert(slice < Nx, sprintf('slice choice %d not possible, only %d slices coronally', slice, Nx));
 	mapped_im = squeeze(im4d(slice,:,:,:));
 	body_coil = squeeze(body_coil_images(slice,:,:));
 	y = squeeze(d(slice,:,:,:));
+	dims = [Ny Nz];
 otherwise
 	display(sprintf('unknown orientation: %s', arg.orient))
 	keyboard;
@@ -55,14 +58,14 @@ smap_fname
 if exist(smap_fname) && ~arg.force_smap
 	load(smap_fname, '*map*'); 
 else
-        centersamp = logical(coverDC_SamplingMask(zeros(Nx, Ny), 8, 8));
-        F_center = staticF(Nx, Ny, 1, 'samp', centersamp);
+        centersamp = logical(coverDC_SamplingMask(zeros(dims(1), dims(2)), 8, 8));
+        F_center = staticF(dims(1), dims(2), 1, 'samp', centersamp);
         mapped_im_lp = F_center'*F_center*mapped_im;
         body_coil_lp = F_center'*F_center*body_coil;
 	display(sprintf('cannot load sense maps for slice %d', slice));
 	display('try est_S_reg')
 	sense_maps = est_S_reg(mapped_im, 'bodycoil', body_coil, 'l2b', 6);
-	mask = generate_mask(arg.orient, slice, Nx, Ny);
+	mask = generate_mask(arg.orient, slice, dims(1), dims(2));
 	sense_maps = truncate_sense_maps(sense_maps, mask);
 	save(smap_fname, 'sense_maps');
 	display('saved new sense map');

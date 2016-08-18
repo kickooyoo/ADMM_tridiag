@@ -22,7 +22,7 @@ function [x, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CH, CV, ...
 %       alphw (scalar, \in [0, 1]) [[orthonormal wavelet case]]
 %               parameter balancing between u0 and u1, default: 0.5
 %       betaw (real scalar) [[orthonormal wavelet case]] 
-%               spatial regularization parameter for wavelets
+%               spatial regularization parameter for wavelets 
 %	pot (potential_fun) for penalty, default l1
 %       compile_mex recompiles tridiag_inv_mex_noni, default: false
 %	debug

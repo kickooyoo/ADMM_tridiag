@@ -29,7 +29,8 @@ if ~strcmp(orient, 'sim')
 		end
 	end
 	if ~isvar('Sxtrue')
-		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, slice, 'orient', orient, 'force_smap', force_smap);
+		[sense_maps, body_coil, Sxtrue, y_full] = invivo_exp(home_path, ...
+			slice, 'orient', orient, 'force_smap', force_smap);
 		if truncate == 1
 			Sxtrue = Sxtrue(3:end-2, 3:end-2, :);
 			sense_maps = sense_maps(3:end-2, 3:end-2, :);

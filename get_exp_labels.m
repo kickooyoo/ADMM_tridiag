@@ -16,7 +16,9 @@ case 'sagittal'
 case 'coronal'
 	curr_folder = sprintf('%scoronal/slice%d/coronal_slice%d_r%d', base, slice, slice, reduction);
 	slice_str = sprintf('coronal%d', slice);
-
+case 'pincat_axial'
+	slice_str = sprintf('pincat_ax%d', slice);
+	curr_folder = sprintf('%spincat_axial/slice%d/axial_slice%d_r%d', base, slice, slice, reduction);
 otherwise
 	display(sprintf('unknwon orientation %s', orient))
 	keyboard
