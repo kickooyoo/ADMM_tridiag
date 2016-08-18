@@ -7,7 +7,7 @@ function [subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu
 % diagCC = mu0 * Ch'*Ch + mu4 + mu0 * betaw * alphw / beta
 %
 % subCCT = - mu1 * I
-% diagCCT = m1 * Cv'*Cv + mu3 + mu1 * betaw * (1-alphw) / beta
+% diagCCT = mu1 * Cv'*Cv + mu3 + mu1 * betaw * (1-alphw) / beta
 arg.betaw = 0;
 arg.alphw = 0.5;
 arg = vararg_pair(arg, varargin);

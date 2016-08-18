@@ -120,7 +120,10 @@ calc_cost = @(beta, CH, CV, D, y, x) norm(col(y) - col(D * x),2)^2/2 + ...
         sum(col(beta(:) .* arg.potx.potk(col(CH * x)))) + sum(col(beta(:) .* arg.poty.potk(col(CV * x))));
 
 % pass tridiag of C'C into mex
-[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu2, Nx, Ny, beta); 
+% subCC = - mu0 * I, subCCT = - mu1 * I
+% diagCC = mu0 * Ch'*Ch + mu2 + mu0 * betaw * alphaw /beta
+% diagCCT = mu1 * Cv'*Cv + mu2 + mu1 * betaw * (1-alphw) / beta
+[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu2, Nx, Ny, beta, 'betaw', arg.betaw); 
 
 if arg.compile_mex
         confirm_compile('tridiag_inv_mex_noni');
