@@ -123,7 +123,7 @@ calc_cost = @(beta, CH, CV, D, y, x) norm(col(y) - col(D * x),2)^2/2 + ...
 % subCC = - mu0 * I, subCCT = - mu1 * I
 % diagCC = mu0 * Ch'*Ch + mu2 + mu0 * betaw * alphaw /beta
 % diagCCT = mu1 * Cv'*Cv + mu2 + mu1 * betaw * (1-alphw) / beta
-[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu2, Nx, Ny, beta, 'betaw', arg.betaw); 
+[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu2, Nx, Ny, beta, 'betaw', arg.betaw, 'alphw', arg.alphw); 
 
 if arg.compile_mex
         confirm_compile('tridiag_inv_mex_noni');
@@ -141,16 +141,16 @@ for iter = 1:niters
         u1 = shrinky(CV * u2 - eta1, beta./mu1);
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
-        try
+        %try
         u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, ...
                 eta1, eta2, subCCT, diagCCT, arg.nthread);
         if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
         x = x_update(mu0, mu2, arg.alph, eig_DD, CH, D, y, u0, u2, ...
                 eta0, eta2, subCC, diagCC, arg.nthread);
         if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
-        catch
-                keyboard
-        end
+        %catch
+        %        keyboard
+        %end
         tridiag_time(iter + 1) = toc(tridiag_tic);
         
         if arg.debug
@@ -211,5 +211,31 @@ xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * D' * (y - (1- alph) * D * u2) + ..
         mu2(:) .* (u2 + eta2);
 xarg = reshape(xarg, D.arg.Nx, D.arg.Ny);
 diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
+
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
+if 0
+NH = D.arg.Nx*D.arg.Ny;
+H = spdiags([col([subCC; zeros(1, D.arg.Ny)]), diagvals(:), col([zeros(1, D.arg.Ny); subCC])], [-1 0 1], NH, NH);
+test_x = H\double(xarg(:));
+
+display('starting full matrix comparison')
+keyboard
+CHCH = full(CH'*CH);  
+H_full = alph^2 * diag(eig_DD(:)) + mu0 * full(CH'*CH) + mu2 * diag(ones(numel(eig_DD),1));
+H_full_sub = diag(H_full, -1);
+H_full_sup = diag(H_full, 1);
+H_full_diag = diag(H_full);
+H_full_tri = diag(H_full_sub, -1) + diag(H_full_diag) + diag(H_full_sup, 1);
+test_x_full = H_full\xarg(:);
+
+unique(diagCC)
+unique(mu0*CHCH + mu2)
+keyboard
+
+if norm(test_x - x) > 1e-5, 
+	display('bad match');
+	keyboard; 
+end
+
+end
 end

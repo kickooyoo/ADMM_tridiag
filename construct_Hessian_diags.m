@@ -30,14 +30,14 @@ else
 end
 if ~isscalar(mu3) || ~isscalar(mu4)
         diagCCT = single(mu1.' .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                mu3.' + mu1.' .* WVconst);
+                mu3.');
         diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                mu4 + mu0 .* Wconst);
+                mu4);
 else
         diagCCT = single(mu1 .* (cat(1, ones(1, Nx), 2*ones(Ny-2, Nx), ones(1, Nx)) + WVconst.^2) + ...
-                mu3 + mu1 .* WVconst);
+                mu3);
         diagCC = single(mu0 .* (cat(1, ones(1, Ny), 2*ones(Nx-2, Ny), ones(1, Ny)) + Wconst.^2) + ...
-                mu4 + mu0 .* Wconst);
+                mu4);
 end
 if any(imag(cat(1, col(subCC), col(subCCT), col(diagCC), col(diagCCT))))
 	display('invalid diagonal values, some are imaginary');
