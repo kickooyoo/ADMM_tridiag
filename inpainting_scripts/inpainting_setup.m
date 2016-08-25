@@ -52,6 +52,13 @@ mu1 = 1;
 mu2 = 1;
 alph = 0.5;
 alphw = 0.5;
+% ------ regularization parameters for SNR = 20, reduce = 1.5 ------
+if wavelets
+
+else
+	beta = 0.02743;
+	beta_circ = 0.01526;
+end
 % ------
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
 

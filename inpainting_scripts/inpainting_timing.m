@@ -1,12 +1,11 @@
 % test tridiag inpaint
 inpainting_setup;
 
+niters = 2000;
 sweep_range = 5;
-beta = ??;
-beta_circ = ??;
 if wavelets
-	betaw = ??;
-	betaw_circ = ??;
+%	betaw = ??;
+%	betaw_circ = ??;
 	alphw = 1;
 	CHW = [CH; betaw * alphw / beta * W];
 	CVW = [CV; betaw * (1-alphw) / beta * W];     
@@ -24,7 +23,9 @@ end
 
 [x_circ, xsave_circ, err_circ, costOrig_circ, time_circ] = AL_P2_inpainting(y, D, RcircW, ...
 	xinit, niters, beta, xtrue, 'mu', {mu0, mu1});
-save_fname = sprintf('inpainting_timing_%s_wavelet%d_SNR%d_reduce%d', machine(1:3), wavelets, SNR, reduce))
+
+	keyboard
+save_fname = sprintf('inpainting_timing_%s_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), wavelets, SNR, reduce);
 save(save_fname)
 
 if 0 

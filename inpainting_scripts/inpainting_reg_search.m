@@ -1,12 +1,8 @@
 % test tridiag inpaint
-sweep_range = 7;
-if ~isvar('betas')
-	betas = logspace(log10(reduce/100), log10(reduce/50), sweep_range);
-end
+sweep_range = 7 - 2*wavelets;
+betas = logspace(log10(reduce/500), log10(reduce/5), sweep_range);
 if wavelets
-	if ~isvar('betaws')
-		betaws = logspace(log10(reduce/2000), log10(reduce/1000), sweep_range);
-	end
+betaws = logspace(log10(reduce/200), log10(reduce/50), sweep_range);
 else
 	betaws = 0;
 end
@@ -14,7 +10,7 @@ betas_circ = betas;
 betaws_circ = betaws;
 min_beta_factor = 1e-6;
 search_range = 100;
-save_fname = sprintf('inpainting_mat/inpainting_timing_%s_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), wavelets, SNR, reduce);
+save_fname = sprintf('inpainting_mat/inpainting_reg_%s_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), wavelets, SNR, reduce);
 err_mask = true(Nx, Ny);
 mask_width = 1;
 err_mask([1:mask_width, end-mask_width+1:end],:) = false;
@@ -43,14 +39,18 @@ for ii = 1:10
 	save(save_fname);
 
 	% adjust betas, betaws
-	[best_beta_ndx, best_betaw_ndx] = find(squeeze(err(end,:,:)) == min(col(err(end,:,:))), 1);
+	if wavelets
+		[best_beta_ndx, best_betaw_ndx] = find(squeeze(err(end,:,:)) == min(col(err(end,:,:))), 1);
+	else
+		best_beta_ndx = find(squeeze(err(end,:,:)) == min(col(err(end,:,:))), 1);
+	end
 	if best_beta_ndx == 1
-		left_beta_factor = reduce./max(betas(1) - search_range, min_beta_factor);
+		left_beta_factor = max(reduce./betas(1) - search_range, min_beta_factor);
 	else
 		left_beta_factor = reduce./betas(best_beta_ndx - 1);
 	end
 	if best_beta_ndx == length(betas)
-		right_beta_factor = reduce./(betas(end) + search_range);
+		right_beta_factor = reduce./betas(end) + search_range;
 	else
 		right_beta_factor = reduce./betas(best_beta_ndx + 1);
 	end
@@ -90,16 +90,18 @@ for ii = 1:10
 	save(save_fname);
 
 	% adjust betas_circ, betaws_circ
-
-	[best_circ_beta_ndx, best_circ_betaw_ndx] = find(squeeze(err_circ(end,:,:)) == min(col(err_circ(end,:,:))), 1);
-
+	if wavelets
+		[best_circ_beta_ndx, best_circ_betaw_ndx] = find(squeeze(err_circ(end,:,:)) == min(col(err_circ(end,:,:))), 1);
+	else
+		best_circ_beta_ndx = find(squeeze(err_circ(end,:,:)) == min(col(err_circ(end,:,:))), 1);
+	end
 	if best_circ_beta_ndx == 1
-		left_beta_factor = reduce./max(betas_circ(1) - search_range, min_beta_factor);
+		left_beta_factor = max(reduce./betas_circ(1) - search_range, min_beta_factor);
 	else
 		left_beta_factor = reduce./betas_circ(best_circ_beta_ndx - 1);
 	end
 	if best_circ_beta_ndx == length(betas_circ)
-		right_beta_factor = reduce./(betas_circ(end) + search_range);
+		right_beta_factor = reduce./betas_circ(end) + search_range;
 	else
 		right_beta_factor = reduce./betas_circ(best_circ_beta_ndx + 1);
 	end
