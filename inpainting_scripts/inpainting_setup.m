@@ -23,7 +23,7 @@ xtrue = xtrue./max(xtrue(:));
 
 % ------ take measurements ------
 rng(0);
-reduce = 2;
+reduce = 1.5;
 samp = (rand(Nx, Ny) <= 1/reduce);
 D = Ginpaint(samp);
 [CH, CV] = construct_finite_diff([Nx Ny]);
@@ -46,7 +46,7 @@ else
 	RcircW = Rcirc;
 end
 % ------ optimization params ------
-niters = 200;
+niters = 100;
 mu0 = 1;
 mu1 = 1;
 mu2 = 1;

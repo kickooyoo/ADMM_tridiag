@@ -2,6 +2,7 @@
 % run in /mai_code
 nfs_broken = true;
 [~, machine] = system('hostname');
+machine = strtrim(machine);
 
 nfs_broken = ~exist('~/iv1h', 'dir') && ...
         isempty([strfind(lower(machine), 'iv1') strfind(lower(machine), 'vega')]);
@@ -9,7 +10,7 @@ if nfs_broken
 	machine = 'iv1.';
 end
 
-switch machine(1:end-1) % last char is some sort of new line
+switch machine
     case {'eecs-IV1', 'iv1', sprintf('\niv1')}
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
@@ -43,6 +44,7 @@ switch machine(1:end-1) % last char is some sort of new line
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
         addpath(genpath('~/iv1h/Documents/mai_code/util'))
+        addpath(genpath('~/iv1h/Documents/mai_code/ADMM_tridiag'))
         addpath(genpath('~/iv1h/Documents/mai_code/spline_basis'))
         addpath(genpath('~/iv1h/Documents/mai_code/pthread_tutor'))
 	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
