@@ -23,11 +23,11 @@ xtrue = xtrue./max(xtrue(:));
 
 % ------ take measurements ------
 rng(0);
-reduce = 4;
+reduce = 2;
 samp = (rand(Nx, Ny) <= 1/reduce);
 D = Ginpaint(samp);
 [CH, CV] = construct_finite_diff([Nx Ny]);
-SNR = 40;
+SNR = 20;
 y_noiseless = D * xtrue;
 sig = 10^(-SNR/20) * norm(y_noiseless) / sqrt(length(y_noiseless));
 y = y_noiseless + sig*randn(size(y_noiseless));
@@ -42,7 +42,7 @@ Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
 if wavelets
 	W = Godwt1(true(Nx, Ny));
 	RcircW = [Rcirc; W];
-else 
+else
 	RcircW = Rcirc;
 end
 % ------ optimization params ------

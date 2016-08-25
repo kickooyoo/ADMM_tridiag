@@ -96,11 +96,6 @@ eta2 = zeros(size(u2));
 mu0 = arg.mu{1};
 mu1 = arg.mu{2};
 mu2 = arg.mu{3};
-if (isscalar(mu2))
-        display('it is scalar!');
-else
-        display('it is not!')
-end
 
 if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
 	if ~isscalar(mu0) || ~isscalar(mu1) || ~isscalar(beta)
