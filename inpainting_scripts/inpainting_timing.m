@@ -10,11 +10,13 @@ if wavelets
 	CHW = [CH; betaw * alphw / beta * W];
 	CVW = [CV; betaw * (1-alphw) / beta * W];     
 	RW = [CHW; CVW];
+	RcircW = [Rcirc; betaw_circ / beta_circ * W];
 else
 	betaw = 0;
 	CHW = CH;
 	CVW = CV;
 	RW = R;
+	RcircW = Rcirc;
 end
 [x, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
 		beta, xinit, xtrue, niters, 'mu', {mu0, mu1, mu2}, 'betaw', betaw, 'alphw', alphw);

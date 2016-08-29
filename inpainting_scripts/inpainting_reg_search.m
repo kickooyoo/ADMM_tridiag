@@ -2,7 +2,7 @@
 sweep_range = 7 - 2*wavelets;
 betas = logspace(log10(reduce/500), log10(reduce/5), sweep_range);
 if wavelets
-betaws = logspace(log10(reduce/200), log10(reduce/50), sweep_range);
+	betaws = logspace(log10(reduce/500), log10(reduce/5), sweep_range);
 else
 	betaws = 0;
 end
@@ -12,7 +12,7 @@ min_beta_factor = 1e-6;
 search_range = 100;
 save_fname = sprintf('inpainting_mat/inpainting_reg_%s_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), wavelets, SNR, reduce);
 err_mask = true(Nx, Ny);
-mask_width = 1;
+mask_width = 5;
 err_mask([1:mask_width, end-mask_width+1:end],:) = false;
 err_mask(:,[1:mask_width, end-mask_width+1:end]) = false;
 
@@ -25,12 +25,10 @@ for ii = 1:10
 				alphw = 1;
 				CHW = [CH; betaw * alphw / beta * W];
 				CVW = [CV; betaw * (1-alphw) / beta * W];     
-				RW = [CHW; CVW];
 			else
 				betaw = 0;
 				CHW = CH;
 				CVW = CV;
-				RW = R;
 			end
 			[x(:,:,jj,kk), xsaved, err(:,jj,kk), cost, time(:,jj,kk)] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
 					beta, xinit, xtrue, niters, 'mu', {mu0, mu1, mu2}, 'betaw', betaw, 'alphw', alphw, 'mask', err_mask);
@@ -72,16 +70,10 @@ for ii = 1:10
 		beta_circ = betas_circ(jj);
 		for kk = 1:length(betaws_circ)
 			if wavelets
-				betaw = betaws_circ(kk);
-				alphw = 1;
-				CHW = [CH; betaw * alphw / beta_circ * W];
-				CVW = [CV; betaw * (1-alphw) / beta_circ * W];     
-				RW = [CHW; CVW];
+				betaw_circ = betaws_circ(kk);
+				RcircW = [Rcirc; betaw_circ / beta_circ * W];
 			else
-				betaw = 0;
-				CHW = CH;
-				CVW = CV;
-				RW = R;
+				RcircW = Rcirc;
 			end
 			[x_circ(:,:,jj,kk), xsave_circ, err_circ(:,jj,kk), costOrig_circ, time_circ(:,jj,kk)] = AL_P2_inpainting(y, D, RcircW, ...
 				xinit, niters, beta_circ, xtrue, 'mu', {mu0, mu1}, 'mask', err_mask);
