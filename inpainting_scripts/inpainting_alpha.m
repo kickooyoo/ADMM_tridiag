@@ -1,9 +1,7 @@
 inpainting_setup;
 
 alphas = [0 0.25 0.5 0.75 1];
-beta = 0.001;
 wavelets = 0;
-betaws = 0;
 niters = 2000;
 
 for jj = 1:length(alphas)

@@ -1,7 +1,12 @@
 % test tridiag inpaint
 inpainting_setup;
+niters = 1000;
 
-niters = 2000;
+save_fname = sprintf('inpainting_mat/inpainting_timing_%s_iters%d_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), niters, wavelets, SNR, reduce);
+if exist(save_fname, 'file')
+	display('file already exists');
+	keyboard;
+end
 sweep_range = 5;
 if wavelets
 %	betaw = ??;
@@ -18,16 +23,19 @@ else
 	RW = R;
 	RcircW = Rcirc;
 end
-[x, xsaved, err, cost, time] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
-		beta, xinit, xtrue, niters, 'mu', {mu0, mu1, mu2}, 'betaw', betaw, 'alphw', alphw);
+alphas = [0 0.25 5 0.75 1];
+for aa = 1:length(alphas)
+	alph = alphas(aa);
+	[x(:,:,aa), xsaved(:,:,:,aa), err(:,aa), cost(:,aa), time(:,aa)] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
+		beta, xinit, xtrue, niters, 'mu', {mu0, mu1, mu2}, 'betaw', betaw, 'alphw', alphw, 'alph', alph);
+end
+
 [x_P2, xsave_P2, err_P2, costOrig_P2, time_P2] = AL_P2_inpainting(y, D, RW, ...
 	xinit, niters, beta, xtrue, 'mu',  {mu0, mu1} );
 
 [x_circ, xsave_circ, err_circ, costOrig_circ, time_circ] = AL_P2_inpainting(y, D, RcircW, ...
 	xinit, niters, beta, xtrue, 'mu', {mu0, mu1});
 
-	keyboard
-save_fname = sprintf('inpainting_timing_%s_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), wavelets, SNR, reduce);
 save(save_fname)
 
 if 0 

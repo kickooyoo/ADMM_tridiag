@@ -24,7 +24,7 @@ xtrue = xtrue./max(xtrue(:));
 % ------ take measurements ------
 rng(0);
 if ~isvar('reduce')
-	reduce = 10;
+	reduce = 2;
 end
 samp = (rand(Nx, Ny) <= 1/reduce);
 D = Ginpaint(samp);
@@ -54,12 +54,23 @@ mu2 = 1;
 alph = 0.5;
 alphw = 0.5;
 % ------ regularization parameters for SNR = 20, reduce = 1.5 ------
-if wavelets
-
-else
-	beta = 0.02743;
-	beta_circ = 0.02743;
+beta_search_fname = sprintf('wavelet%d_SNR%d_reduce%1.2d.mat', wavelets, SNR, reduce);
+d = dir('inpainting_mat');
+for ii = 1:length(d)
+	if ~isempty(strfind(d(ii).name, beta_search_fname))
+		load(d(ii).name, 'betas', 'betaws', 'betas_circ', 'betaws_circ');
+	end
 end
+if ~isvar('betas')
+	display(sprintf('no file found matching %s, if doing reg search no prob', beta_search_fname));
+else
+	beta = betas(ceil(length(betas)/2));
+	betaw = betaws(ceil(length(betaws)/2));
+	beta_circ = betas_circ(ceil(length(betas_circ)/2));
+	betaw_circ = betaws_circ(ceil(length(betaws_circ)/2));
+end
+	%beta = 0.02743;
+	%beta_circ = 0.02743;
 % ------
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
 

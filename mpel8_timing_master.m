@@ -4,23 +4,25 @@
 %exp_ADMM_ALP2;
 %display('done with slice 38')
 
+%clear;
+%tridiag_setup;
+%orient = 'coronal'; truncate = 2; niters = 1000;
+%exp_ADMM_ALP2;
+%display('done with slice 38')
+
+%send_mai_text('done with sagittal tests on iv1')
+%return
+
 clear;
 tridiag_setup;
-orient = 'coronal'; truncate = 2; niters = 1000;
-exp_ADMM_ALP2;
-display('done with slice 38')
-
-send_mai_text('done with sagittal tests on iv1')
-return
-
-clear;
-tridiag_setup;
+reduction = 4;
 orient = 'axial'; slice = 38; truncate = 2;
 exp_ADMM_ALP2;
 display('done with slice 38')
 
 clear;
 tridiag_setup;
+reduction = 4;
 orient = 'axial'; slice = 90; truncate = 2;
 exp_ADMM_ALP2;
 display('done with slice 90');

@@ -15,7 +15,7 @@ err_mask = true(Nx, Ny);
 mask_width = 5;
 err_mask([1:mask_width, end-mask_width+1:end],:) = false;
 err_mask(:,[1:mask_width, end-mask_width+1:end]) = false;
-
+tol = 2*eps('single');
 for ii = 1:10
 	for jj = 1:length(betas)
 		beta = betas(jj);
@@ -112,6 +112,9 @@ for ii = 1:10
 		betaws_circ = logspace(log10(reduce/left_betaw_factor), log10(reduce/right_betaw_factor), sweep_range);
 	end
 	display(sprintf('done with %d rounds of coarse to fine', ii));
+	if (betas(end) - betas(1)) < tol && (betas_circ(end) - betas(1)) < tol
+		break;
+	end
 end
 
 
