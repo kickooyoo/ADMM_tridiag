@@ -2,7 +2,7 @@
 inpainting_setup;
 niters = 1000;
 
-save_fname = sprintf('inpainting_mat/inpainting_timing_%s_iters%d_wavelet%d_SNR%d_reduce%1.2d.mat', machine(1:3), niters, wavelets, SNR, reduce);
+save_fname = sprintf('inpainting_mat/%s/inpainting_timing_%s_iters%d_wavelet%d_SNR%d_reduce%1.2d_%strue_tunedmu.mat', obj, machine(1:3), niters, wavelets, SNR, reduce, true_opt);
 if exist(save_fname, 'file')
 	display('file already exists');
 	keyboard;
@@ -23,19 +23,23 @@ else
 	RW = R;
 	RcircW = Rcirc;
 end
-alphas = [0 0.25 5 0.75 1];
+if do_alph
+	alphas = 0:0.1:1;
+else
+	alphas = 0.5;
+end
 for aa = 1:length(alphas)
 	alph = alphas(aa);
 	[x(:,:,aa), xsaved(:,:,:,aa), err(:,aa), cost(:,aa), time(:,aa)] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
-		beta, xinit, xtrue, niters, 'mu', {mu0, mu1, mu2}, 'betaw', betaw, 'alphw', alphw, 'alph', alph);
+		beta, xinit, xtrue, niters, 'betaw', betaw, 'alphw', alphw, 'alph', alph);
 end
 
 [x_P2, xsave_P2, err_P2, costOrig_P2, time_P2] = AL_P2_inpainting(y, D, RW, ...
-	xinit, niters, beta, xtrue, 'mu',  {mu0, mu1} );
+	xinit, niters, beta, xtrue);
 
 [x_circ, xsave_circ, err_circ, costOrig_circ, time_circ] = AL_P2_inpainting(y, D, RcircW, ...
-	xinit, niters, beta, xtrue, 'mu', {mu0, mu1});
-
+	xinit, niters, beta, xtrue);
+[x_MFIS, C_MFIS, time_MFIS, err_MFIS, ~] = MFISTA_inpainting_wrapper(Nx, Ny, R, y, xinit, D, beta, niters, curr_folder, slice_str, 'xinf', xtrue, 'xinfnorm', norm(col(xtrue),2));
 save(save_fname)
 
 if 0 

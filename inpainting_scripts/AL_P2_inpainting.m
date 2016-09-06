@@ -46,6 +46,7 @@ arg.debug = false;
 arg.precon = true;
 arg.save_x = false;
 arg.pot = [];
+arg.kapp = 12;
 arg = vararg_pair(arg, varargin);
 
 tic;
@@ -54,22 +55,23 @@ Q = Gdft('mask', true(Nx, Ny));
 e0 = zeros(Nx, Ny);
 e0(1, 1) = 1; %end/2,end/2) = 1;
 eigvalsrr = reshape(Q * RR * e0(:), Nx, Ny); % approximate, for use in precon
-if isempty(arg.mu)
-        keyboard %??
-	%arg.mu0 = get_mu(eigvalsss(arg.mask(:)), eigvalsrr, Nx*Ny, lambda, 'split', 'AL-P2');
-end
+% eigvals for DD, get mus
+DD = D'*D;
+eigvalsdd = reshape(DD * ones(D.idim), Nx, Ny); 
 
-if length(arg.mu) ~= 2
-	display('wrong size for mu0 convergence parameters');
-	keyboard;
+if isempty(arg.mu)
+	mu1 = 1/(arg.kapp - 1);
+	mu0 = (arg.kapp - 1) *mu1 / 4;       
+else
+	mu0 = arg.mu{1};
+	mu1 = arg.mu{2};
 end
+Hu1 = eigvalsdd + mu1;
 
 y = single(y(:));
 x = single(xinit(:));
 u0 = R*x;
 u1 = x;
-mu0 = arg.mu{1};
-mu1 = arg.mu{2};
 eta_0 = zeros(size(u0));
 eta_1 = zeros(size(u1));
 
@@ -101,11 +103,6 @@ else
 		P_CG = 1;
 	end
 end
-
-% eigvals for DD, get mus
-DD = D'*D;
-eigvalsdd = reshape(DD * ones(D.idim), Nx, Ny); 
-Hu1 = eigvalsdd + mu1;
 
 calc_errcost = 1;
 if (calc_errcost)
@@ -179,8 +176,9 @@ switch upper(arg.zmethod)
         case 'CG'
                 y = [u0 - eta_0; u1 - eta_1];
                 try
-                        x = qpwls_pcg1(x, D, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
+                        [xs, info] = qpwls_pcg1(x, D, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
                                 'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', P);
+			x = xs;
                 catch
                         display('qpwls failed');
                         keyboard

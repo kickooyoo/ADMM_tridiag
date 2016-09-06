@@ -178,7 +178,9 @@ end
 beta = choose_beta(orient, slice, reduction);
 plain_mu = num2cell(ones(1,5));
 
-true_opt = 'true';
+if ~isvar('true_opt')
+	true_opt = 'avg';%'true'; %'avg'
+end
 if strcmp(true_opt, 'true')
 	if strcmp(orient, 'sim')
 		xinf = body_coil;%sos_combine(permute(Sxtrue, [1 2 4 3]));

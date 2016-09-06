@@ -3,26 +3,40 @@ if ~isvar('wavelets')
 	wavelets = 1;
 end
 % ------ construct true image ------
-fname = 'textbook_contrast.jpg';
-xtrue = imread(fname);
-if size(xtrue, 3) > 1
-	xtrue = rgb2gray(xtrue);
+if ~isvar('obj')
+	obj = 'glass'; % 'textbook';
 end
-xtrue = double(xtrue);
-xtrue = downsample2(xtrue, 7);
-% make even dimensions
-if mod(size(xtrue, 1), 2) == 1
-	xtrue = xtrue(2:end, :);
+switch obj
+case 'glass'
+	fname = 'glass.png';
+	xtrue = double(imread(fname));
+	xtrue = xtrue(1:180, 1:270);
+	xtrue = xtrue./max(xtrue(:));
+case 'textbook'
+	fname = 'textbook_contrast.jpg';
+	xtrue = imread(fname);
+	if size(xtrue, 3) > 1
+		xtrue = rgb2gray(xtrue);
+	end
+	xtrue = double(xtrue);
+	xtrue = downsample2(xtrue, 7);
+	% make even dimensions
+	if mod(size(xtrue, 1), 2) == 1
+		xtrue = xtrue(2:end, :);
+	end
+	if mod(size(xtrue, 2), 2) == 1
+		xtrue = xtrue(:, 2:end);
+	end
+	xtrue = xtrue(:,1:540);
+	xtrue = xtrue./max(xtrue(:));
+otherwise
+	display('unknown obj option');
+	keyboard
 end
-if mod(size(xtrue, 2), 2) == 1
-	xtrue = xtrue(:, 2:end);
-end
-xtrue = xtrue(:,1:540);
-xtrue = xtrue./max(xtrue(:));
 [Nx, Ny] = size(xtrue);
 
 % ------ take measurements ------
-rng(0);
+rand('state',0);%rng(0);
 if ~isvar('reduce')
 	reduce = 2;
 end
@@ -55,7 +69,7 @@ alph = 0.5;
 alphw = 0.5;
 % ------ regularization parameters for SNR = 20, reduce = 1.5 ------
 beta_search_fname = sprintf('wavelet%d_SNR%d_reduce%1.2d.mat', wavelets, SNR, reduce);
-d = dir('inpainting_mat');
+d = dir(sprintf('inpainting_mat/%s', obj));
 for ii = 1:length(d)
 	if ~isempty(strfind(d(ii).name, beta_search_fname))
 		load(d(ii).name, 'betas', 'betaws', 'betas_circ', 'betaws_circ');
@@ -63,6 +77,7 @@ for ii = 1:length(d)
 end
 if ~isvar('betas')
 	display(sprintf('no file found matching %s, if doing reg search no prob', beta_search_fname));
+	keyboard
 else
 	beta = betas(ceil(length(betas)/2));
 	betaw = betaws(ceil(length(betaws)/2));
@@ -71,6 +86,30 @@ else
 end
 	%beta = 0.02743;
 	%beta_circ = 0.02743;
+	if isvar('jack_betas') && jack_betas
+		beta = 0.2;
+		betaw = 0.;
+		beta_circ = 0.2;
+		betaw_circ = 0.3;
+	end
 % ------
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
+
+curr_folder = sprintf('./inpainting_mat/%s/', obj);
+slice_str = sprintf('SNR%d_reduce%1.2d', SNR, reduce);
+if ~isvar('true_opt')
+true_opt = 'true';%'inf'; % true
+end
+
+
+if strcmp(true_opt, 'inf')
+	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
+	if exist(MFISTA_inf_fname, 'file')
+		load(MFISTA_inf_fname, 'xMFIS');
+		xtrue = xMFIS;
+	else
+		display('no inf found')
+		keyboard;
+	end
+end
 

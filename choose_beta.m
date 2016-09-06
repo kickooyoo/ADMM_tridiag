@@ -37,7 +37,7 @@ case 67
 	beta = 2^27;
 case 38
 	if reduction == 6
-		beta = 2^21;
+		beta = 2^24;%2^21;
 	elseif reduction <= 8
 		beta = 2^20;
 	elseif reduction == 12
@@ -46,7 +46,15 @@ case 38
 		beta = 2^20;
 	end
 case 90
-	beta = 2^25;
+	if reduction == 6
+		beta = 2^23; %2^21;
+	elseif reduction <= 8
+		beta = 2^23;% 2^20;
+	elseif reduction == 12
+		beta = 2^18;
+	else
+		beta = 2^20;
+	end
 otherwise
 	display('unknown which is best beta, choosing 2^20 arbitrarily');
 	beta = 2^20;

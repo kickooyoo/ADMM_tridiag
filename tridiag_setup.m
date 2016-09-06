@@ -7,7 +7,10 @@ machine = strtrim(machine);
 nfs_broken = ~exist('~/iv1h', 'dir') && ...
         isempty([strfind(lower(machine), 'iv1') strfind(lower(machine), 'vega')]);
 if nfs_broken
-	machine = 'iv1.';
+	display('provide alternate home path');
+	home = '/net/iv1/home/mtle/';
+else
+	home = '~/iv1h/';
 end
 
 switch machine
@@ -43,12 +46,12 @@ switch machine
     case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu', 'ir71.eecs.umich.edu'}
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
-        addpath(genpath('~/iv1h/Documents/mai_code/util'))
-        addpath(genpath('~/iv1h/Documents/mai_code/ADMM_tridiag'))
-        addpath(genpath('~/iv1h/Documents/mai_code/spline_basis'))
-        addpath(genpath('~/iv1h/Documents/mai_code/pthread_tutor'))
-	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
-	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
+        addpath(genpath(sprintf('%sDocuments/mai_code/util', home)))
+        addpath(genpath(sprintf('%sDocuments/mai_code/ADMM_tridiag', home)))
+        addpath(genpath(sprintf('%sDocuments/mai_code/spline_basis', home)))
+        addpath(genpath(sprintf('%sDocuments/mai_code/pthread_tutor', home)))
+	addpath(sprintf('%sDocuments/contrib/ramani_MFISTA', home));
+	addpath(sprintf('%sDocuments/contrib/ramani_fbrain', home));
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
 	if ~isempty(strfind(machine, 'ir71'))

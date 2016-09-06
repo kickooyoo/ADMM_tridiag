@@ -1,7 +1,10 @@
 % script for making plots and images on vega
 db_path = '~/Dropbox/fessler/writing/tridiag/';
-FontSize = 28;
+FontSize = 12;
 FP_incl = 0;
+do_all = [0 0 0 0 1 0 0];
+preload = true;
+if do_all(1)
 %% axial slice 38 --------------------------------------------------------
 clearvars -except db_path FontSize FP_incl
 % eval(load_except([db_path 'axial_slice38/ir7_timing_256x144_20000iter_slice38_avgtrue.mat'], 'db_path'))
@@ -55,6 +58,8 @@ clear time_comp; clear *_tri*; clear *alp2*; clear *warm; plot_timing; close;
 lh = legend('ADMM-tridiag,nopar', 'ADMM-tridiag,feval', 'ADMM-tridiag,pfor', 'ADMM-tridiag,spmd'); set(lh, 'FontSize', FontSize);
 title('');
 save_im(db_path, 'ax_38_timing_FP_parmethods_ir72')
+end
+if do_all(2)
 %% sim --------------------------------------------------------
 clearvars -except db_path FontSize order
 % load([db_path 'sim/ir7_x_MFISTA_timing_sim_beta8192.mat'])
@@ -94,6 +99,8 @@ lstring = {'AL-tridiag'; 'MFISTA-5'%'AL-tridiag,svt';
 plot_timing
 short_slice_str = 'sim_err';
 ylabel('NRMSE to x_{true} (dB)')
+end
+if do_all(3)
 %% coronal slice 135 --------------------------------------------------------
 clearvars -except db_path
 eval(load_except([db_path 'coronal_135/ir7_timing_144x128_6000iter_coronal135_MFISTAtrue.mat'], 'db_path'))
@@ -103,41 +110,53 @@ end
 lstring = {'AL-tridiag';'MFISTA-5';'AL-P2';'ADMM-tridiag';'ADMM-FP-tridiag'};
 short_slice_str = 'co_135';
 plot_timing
+end
+if do_all(4)
 %% sagittal slice 69 ----------------------------------------------------
 clearvars -except db_path
 eval(load_except([db_path 'sagittal_slice69/iv1_timing_256x128_6000iter_sagittal69_MFISTAtrue.mat'], 'db_path'))
 short_slice_str = 'sa_69';
 lstring = {'AL-tridiag'; 'AL-tridiag,svt'; 'MFISTA-5';'AL-P2'; 'ADMM-tridiag'; 'ADMM-FP-tridiag'};
 plot_timing
+end
+if do_all(5)
 %% axial slice 90 --------------------------------------------------------
-clearvars -except db_path FontSize order FP_incl
+if ~preload
+	clearvars -except db_path FontSize order FP_incl
+end
 % eval(load_except([db_path 'axial_slice90/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice90_raw/iv1_timing_256x144_20000iter_slice90_avgtrue.mat'], 'db_path'))
 % eval(load_except([db_path 'axial_slice90/mpe_timing_256x144_5000iter_slice90_avgtrue.mat'], 'db_path'))
 if 1
-        eval(load_except([db_path 'axial_slice90_truncate/ir7_timing_256x128_5000iter_slice90_avgtrue.mat'], 'db_path'))
-        orn_ndx = 400;
-        plot_axes = {[0 130 -84 0];[0 1400 -84 0]};
+	if ~preload
+		eval(load_except([db_path 'axial_slice90_r4_truncate/ir7_timing_256x128_5000iter_slice90_avgtrue_1048576beta.mat'], 'db_path'))
+	end
+	clear time*inf
+	orn_ndx = 400;
+        plot_axes = {[0 40 -80 0];[0 800 -80 0]};
         if FP_incl
-                short_slice_str = 'ax_90';
+                short_slice_str = 'ax_90_new';
                 order = [5 2 3 4 1];
         else
                 clear *FP
-                short_slice_str = 'ax_90_noFP';
+                short_slice_str = 'ax_90_noFP_r4';
                 colors = 'mgkbry'; % for w/o FP
                 markers = 'o+*sd.^v><ph'; % for w/o FP
                 order = [2 3 4 1];
         end
 else
-        eval(load_except([db_path 'axial_slice90_truncate/ir7_timing_256x128_5000iter_slice90_truetrue.mat'], 'db_path'))
+	if ~preload
+		eval(load_except([db_path 'axial_slice90_r4_truncate/ir7_timing_256x128_5000iter_slice90_truetrue_1048576beta.mat'], 'db_path'))
+	end
+	clear time*inf
         orn_ndx = 30;
         plot_axes = {[0 4 -23 0];[0 65 -23 0]};
         if FP_incl
-                short_slice_str = 'ax_90_err';
+                short_slice_str = 'ax_90_err_new';
                 order = [5 2 3 4 1];
         else
                 clear *FP
-                short_slice_str = 'ax_90_err_noFP';
+                short_slice_str = 'ax_90_err_noFP_new';
                 colors = 'mgkbry'; % for w/o FP
                 markers = 'o+*sd.^v><ph'; % for w/o FP
                 order = [2 3 4 1];
@@ -147,6 +166,8 @@ end
 
 lstring = {'AL-tridiag';'MFISTA-5';'AL-P2-NC';'ADMM-tridiag';'ADMM-FP-tridiag'};
 plot_timing
+end 
+if do_all(6)
 %% axial slice 67 --------------------------------------------------------
 clearvars -except db_path FontSize
 eval(load_except([db_path 'axial_slice67/iv1_timing_256x144_20000iter_slice67_avgtrue.mat'], 'db_path'))
@@ -154,7 +175,7 @@ eval(load_except([db_path 'axial_slice67/iv1_timing_256x144_20000iter_slice67_av
 plot_timing
 short_slice_str = 'ax_67';
 lstring = {'AL-tridiag'; 'MFISTA-5'; 'AL-P2'; 'ADMM-tridiag'; 'ADMM-FP-tridiag'};
-
+end
 %% --------------------------- save timing ---------------------------
 title('');
 save_im(db_path, sprintf('figs/%s_iter_%s', short_slice_str, machine(1:3)))

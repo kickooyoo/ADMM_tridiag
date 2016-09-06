@@ -59,6 +59,7 @@ arg.mu_args = {};
 arg.save_progress = [];
 arg.potx = [];
 arg.poty = [];
+arg.kapp = 4;
 arg = vararg_pair(arg, varargin);
 
 % eigvals for DD, get mus
@@ -66,17 +67,23 @@ DD = D'*D;
 eig_DD = reshape(DD * ones(D.idim), Nx, Ny); 
 
 if isempty(arg.mu)
-	arg.mu = get_mu(eig_DD, [], Nx*Ny, beta, 'mask', arg.mask, ...
-                'split', 'ADMM-tridiag', 'alph', arg.alph, ...
-		arg.mu_args{:});
+        CCx = sparse(diag(-1*ones(1,Nx-1),-1) + diag(cat(2, 1, 2*ones(1,Nx - 2), 1)) + diag(-1*ones(1,Nx-1),1));
+	CCy = sparse(diag(-1*ones(1,Ny-1),-1) + diag(cat(2, 1, 2*ones(1,Ny - 2), 1)) + diag(-1*ones(1,Ny-1),1));
+	[eigV, eigD] = eigs(CCx);
+	RRmaxx = max(eigD(:));
+	[eigV, eigD] = eigs(CCy);
+	RRmaxy = max(eigD(:));
+	c = max(arg.alph.^2, (1-arg.alph).^2) + 1e-2;
+	mu1 = c*(arg.kapp - 1)./RRmaxy;
+	mu0 = c*(arg.kapp - 1)./RRmaxx;
+	mu2 = c - max(arg.alph.^2, (1-arg.alph).^2)*eig_DD;
+else
+	mu0 = arg.mu{1};
+	mu1 = arg.mu{2};
+	mu2 = arg.mu{3};
 end
 
 tic
-
-if length(arg.mu) ~= 3
-	display('wrong size for mu convergence parameters');
-	keyboard;
-end
 
 if ~strcmp(class(arg.nthread), 'int32')
 	display('nthread must be int32');
@@ -93,9 +100,6 @@ eta0 = zeros(size(u0));
 eta1 = zeros(size(u1));
 eta2 = zeros(size(u2));
 % renaming to match paper indices
-mu0 = arg.mu{1};
-mu1 = arg.mu{2};
-mu2 = arg.mu{3};
 
 if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
 	if ~isscalar(mu0) || ~isscalar(mu1) || ~isscalar(beta)

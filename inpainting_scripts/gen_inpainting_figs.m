@@ -5,32 +5,35 @@ axis off; title(''); %colorbar
 save_im(curr_path, 'inpaint_xtrue')
 figure; im(xinit.', [0 1])
 axis off; title(''); %colorbar
-save_im(curr_path, sprintf('inpaint_xinit_SNR%d_r%1.2d', SNR, reduce))
+save_im(curr_path, sprintf('%s/inpaint_xinit_SNR%d_r%1.2d', obj, SNR, reduce))
 %%
 full_err = calc_NRMSE_over_mask(x_circ, xtrue);
 figure; im(abs(x_circ - xtrue).',[0 0.1]);
-axis off; title(sprintf('NRMSE: %2.2f', full_err)); %colorbar
+axis off; title(sprintf('%s/NRMSE: %2.2f', full_err)); %colorbar
+colormap(flipud(colormap))
 save_im(curr_path, 'circ_err_SNR10_r2')
 xlim([450 540]); ylim([300 432]);
-save_im(curr_path, sprintf('err_SNR%d_r%1.2d_detail1', SNR, reduce))
+save_im(curr_path, sprintf('%s/err_SNR%d_r%1.2d_detail1', obj, SNR, reduce))
 
 %%
 figure; im(x_circ.', [0 1])
 axis off; title(''); %colorbar
-save_im(curr_path, sprintf('inpaint_circ_SNR%d_r%1.2d', SNR, reduce))
+save_im(curr_path, sprintf('%s/inpaint_circ_SNR%d_r%1.2d', obj, SNR, reduce))
 
 %%
 full_err = calc_NRMSE_over_mask(x(:,:,3), xtrue);
 figure; im(abs(x(:,:,3) - xtrue).',[0 0.1]);
-axis off; title(sprintf('NRMSE: %2.2f', full_err)); %colorbar
-save_im(curr_path, sprintf('err_SNR%d_r%1.2d', SNR, reduce))
+colormap(flipud(colormap))
+cbarh = colorbar;
+axis off; title(sprintf('%s/NRMSE: %2.2f', full_err)); %colorbar
+save_im(curr_path, sprintf('%s/err_SNR%d_r%1.2d', obj, SNR, reduce))
 xlim([450 540]); ylim([300 432]);
-save_im(curr_path, sprintf('err_SNR%d_r%1.2d_detail1', SNR, reduce))
+save_im(curr_path, sprintf('%s/err_SNR%d_r%1.2d_detail1', obj, SNR, reduce))
 
 %%
 figure; im(x(:,:,3).', [0 1])
 axis off; title(''); %colorbar
-save_im(curr_path, sprintf('inpaint_SNR%d_r%1.2d', SNR, reduce))
+save_im(curr_path, sprintf('%s/inpaint_SNR%d_r%1.2d', obj, SNR, reduce))
 
 %%
 figure; im(abs(x_circ - xtrue).' - abs(x(:,:,3) - xtrue).', [-0.1 0.1]);
