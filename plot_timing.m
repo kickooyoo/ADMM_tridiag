@@ -23,7 +23,9 @@ end
 if ~isvar('order')
         order = 1:length(exps);
 end
-y_val = 'nrmsd'; %'nrmsd'; %'costOrig'
+if ~isvar('y_val')
+        y_val = 'nrmsd'; %'nrmsd'; %'costOrig'
+end
 xlabels = {'wall time (s)'; 'iteration number'};
 for plot_ndx = 1:2
 fhandle = figure('Position', [100 100 400 300]); hold on; 

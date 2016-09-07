@@ -1,3 +1,5 @@
+db_path = '~/Dropbox/fessler/writing/tridiag/';
+FontSize = 18;
 if ~isvar('colors')
         colors = 'cmgkbry';
 end
@@ -5,20 +7,27 @@ if ~isvar('markers')
         markers = 'xo+*sd.^v><ph';
 end
 if ~isvar('ystr')
-        ystr = 'NRMSD to x^{(\infty)} (dB)';
+        ystr = 'NRMSE to x_{true} (dB)';
 end
-indeces = 1:niters;
+if ~isvar('time_MFIS') && isvar('time_FIS')
+        time_MFIS = time_FIS;
+        
+end
+
+clear time_FIS;
+short_slice_str = 'inpaint';
+order = [2 3 1 4];
 x = x(:,:,1);
-err = err(1,:);
-time = time(1,:);
-legend = {'AL-tridiag-inpaint'; 'AL-P2-NC-inpaint'; 'AL-P2-inpaint'};
-MarkerSize = 16;
+err = err(:,1);
+time = time(:,1);
+% lstring = {'AL-tridiag-inpaint'; 'AL-P2-NC-inpaint'; 'AL-P2-inpaint'};
+MarkerSize = 10;
 LineWidth = 2;
 exps = who('time*');
 start_ndx = 1;
-end_ndx = niters+1;
+end_ndx = 200;%niters+1;
 if ~isvar('orn_ndx')
-        orn_ndx = round(end_ndx/2);
+        orn_ndx = round(end_ndx/4);
 end
 xform = @(x) 20*log10(x);
 
@@ -58,9 +67,9 @@ for kk = 1:length(exps)
 	curr_color = colors(mod(kk, length(colors)) + 1);
 	for jj = 1:Nd
                 if plot_ndx == 1
-                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', curr_name, indeces, tcomp, y_val, suffix, indeces, curr_color, '-', LineWidth);
+                        plot_command = sprintf('h(kk,1) = plot(cumsum(%s(%s))%s, xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', curr_name, indices, tcomp, y_val, suffix, indices, curr_color, '-', LineWidth);
                 else
-                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', y_val, suffix, indeces, curr_color, '-', LineWidth);
+                        plot_command = sprintf('h(kk,1) = plot(xform(%s%s(%s)), ''%s%s'', ''LineWidth'', %d);', y_val, suffix, indices, curr_color, '-', LineWidth);
                 end
                 try
                         eval(plot_command);
@@ -121,3 +130,11 @@ else
 end
 set(gca,'FontSize', FontSize)
 end
+%%
+
+title('');
+save_im(db_path, sprintf('figs/%s_iter_%s', short_slice_str, machine(1:3)))
+close;
+title('');
+xlim([0 50])
+save_im(db_path, sprintf('figs/%s_timing_%s', short_slice_str, machine(1:3)))
