@@ -92,11 +92,29 @@ end
 		beta_circ = 0.2;
 		betaw_circ = 0.3;
 	end
+
+if wavelets
+%       betaw = ??;
+%       betaw_circ = ??;
+	alphw = 1;
+	CHW = [CH; betaw * alphw / beta * W];
+	CVW = [CV; betaw * (1-alphw) / beta * W]; 
+	RW = [CHW; CVW];
+	RcircW = [Rcirc; betaw_circ / beta_circ * W];
+else        
+	betaw = 0;
+	CHW = CH; 
+	CVW = CV; 
+	RW = R; 
+	RcircW = Rcirc;
+end
+								
+
 % ------
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
 
 curr_folder = sprintf('./inpainting_mat/%s/', obj);
-slice_str = sprintf('SNR%d_reduce%1.2d', SNR, reduce);
+slice_str = sprintf('wavelet%d_SNR%d_reduce%1.2d', wavelets, SNR, reduce);
 if ~isvar('true_opt')
 true_opt = 'true';%'inf'; % true
 end

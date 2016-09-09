@@ -37,9 +37,9 @@ case 67
 	beta = 2^27;
 case 38
 	if reduction == 6
-		beta = 2^24;%2^21;
+		beta = 2^23;%2^21;
 	elseif reduction <= 8
-		beta = 2^20;
+		beta = 2^23;
 	elseif reduction == 12
 		beta = 2^18;
 	else
