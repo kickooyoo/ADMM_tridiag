@@ -1,5 +1,5 @@
 % generate xinf for tridiag experiment
-niters_inf = 50000;
+niters_inf = 20000;
 
 if ~alphw == 1
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);

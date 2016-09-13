@@ -1,5 +1,4 @@
 % test tridiag inpaint
-inpainting_setup;
 niters = 2000;
 
 save_fname = sprintf('inpainting_mat/%s/timing/inpainting_tuning_%s_iters%d_wavelet%d_SNR%d_reduce%1.2d_%strue.mat', obj, machine(1:3), niters, wavelets, SNR, reduce, true_opt);

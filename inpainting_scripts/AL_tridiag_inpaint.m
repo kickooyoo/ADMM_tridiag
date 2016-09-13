@@ -117,7 +117,7 @@ if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
 end
 shrinkx = @(a, t) arg.potx.shrink(a, t);
 shrinky = @(a, t) arg.poty.shrink(a, t);
-calc_cost = @(beta, CH, CV, D, y, x) norm(col(y) - col(D * x),2)^2/2 + ...
+calc_cost_tridiag_inpaint = @(beta, CH, CV, D, y, x) norm(col(y) - col(D * x),2)^2/2 + ...
         sum(col(beta(:) .* arg.potx.potk(col(CH * x)))) + sum(col(beta(:) .* arg.poty.potk(col(CV * x))));
 
 % pass tridiag of C'C into mex
@@ -131,7 +131,7 @@ if arg.compile_mex
 end
 
 err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
-cost(1) = calc_cost(beta, CH, CV, D, y, x);
+cost(1) = calc_cost_tridiag_inpaint(beta, CH, CV, D, y, x);
 time(1) = toc;
 tridiag_time(1) = 0;
 %while(iter < niters)
@@ -180,7 +180,7 @@ for iter = 1:niters
 	end
 
         xsaved(:,:,iter) = reshape(x, Nx, Ny);
-        cost(iter + 1) = calc_cost(beta, CH, CV, D, y, x);
+        cost(iter + 1) = calc_cost_tridiag_inpaint(beta, CH, CV, D, y, x);
 end
 x = reshape(x, Nx, Ny);
 if strcmp(arg.timing, 'tridiag')

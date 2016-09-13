@@ -35,25 +35,36 @@ otherwise
 end
 [Nx, Ny] = size(xtrue);
 
-% ------ take measurements ------
-rand('state',0);%rng(0);
 if ~isvar('reduce')
 	reduce = 2;
 end
-samp = (rand(Nx, Ny) <= 1/reduce);
-D = Ginpaint(samp);
-[CH, CV] = construct_finite_diff([Nx Ny]);
 if ~isvar('SNR')
 	SNR = 10;
 end
-y_noiseless = D * xtrue;
-sig = 10^(-SNR/20) * norm(y_noiseless) / sqrt(length(y_noiseless));
-y = y_noiseless + sig*randn(size(y_noiseless));
-% ------ initialize x with nearest neighbors ------
-[xx, yy] = ndgrid(1:Nx, 1:Ny);
-xx_D = xx(samp);
-yy_D = yy(samp);
-xinit = griddata(xx_D, yy_D, y, xx, yy, 'nearest');
+data_fname = sprintf('./inpainting_mat/%s/data_wavelet%d_SNR%d_reduce%d', obj, wavelets, SNR, reduce);
+if exist(data_fname, 'file')
+	load(data_fname);
+else
+	% ------ take measurements ------
+	try
+		rng(0);
+	catch
+		rand('state',0);
+		randn('state',0);
+	end
+	samp = (rand(Nx, Ny) <= 1/reduce);
+	D = Ginpaint(samp);
+	[CH, CV] = construct_finite_diff([Nx Ny]);
+	y_noiseless = D * xtrue;
+	sig = 10^(-SNR/20) * norm(y_noiseless) / sqrt(length(y_noiseless));
+	y = y_noiseless + sig*randn(size(y_noiseless));
+	% ------ initialize x with nearest neighbors ------
+	[xx, yy] = ndgrid(1:Nx, 1:Ny);
+	xx_D = xx(samp);
+	yy_D = yy(samp);
+	xinit = griddata(xx_D, yy_D, y, xx, yy, 'nearest');
+	save(data_fname, 'reduce', 'samp', 'D', 'CH', 'CV', 'SNR', 'y_noiseless', 'y', 'sig', 'xinit');
+end
 % ------ construct regularizers ------- 
 R = [CH; CV];
 Rcirc = Cdiffs([Nx Ny],'offsets', [1 Nx], 'type_diff','circshift');
