@@ -60,6 +60,7 @@ arg.save_progress = [];
 arg.potx = [];
 arg.poty = [];
 arg.kapp = 4;
+arg.pos = 0.1;
 arg = vararg_pair(arg, varargin);
 
 % eigvals for DD, get mus
@@ -73,9 +74,10 @@ if isempty(arg.mu)
 	RRmaxx = max(eigD(:));
 	[eigV, eigD] = eigs(CCy);
 	RRmaxy = max(eigD(:));
-	c = max(arg.alph.^2, (1-arg.alph).^2) + 1e-2;
-	mu1 = c*(arg.kapp - 1)./RRmaxy;
-	mu0 = c*(arg.kapp - 1)./RRmaxx;
+	c = max(arg.alph.^2, (1-arg.alph).^2) + arg.pos;
+	w = (arg.betaw * arg.alphw / beta ).^2;
+	mu1 = c*(arg.kapp - 1)./(RRmaxy - (arg.kapp - 1) * w);
+	mu0 = c*(arg.kapp - 1)./(RRmaxx - (arg.kapp - 1) * w);
 	mu2 = c - max(arg.alph.^2, (1-arg.alph).^2)*eig_DD;
 else
 	mu0 = arg.mu{1};

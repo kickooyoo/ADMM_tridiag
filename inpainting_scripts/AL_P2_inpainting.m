@@ -47,6 +47,8 @@ arg.precon = true;
 arg.save_x = false;
 arg.pot = [];
 arg.kapp = 12;
+arg.betaw = 0; % only used for tuning
+arg.alphw = 0.5; % only used for tuning
 arg = vararg_pair(arg, varargin);
 
 tic;
@@ -61,7 +63,8 @@ eigvalsdd = reshape(DD * ones(D.idim), Nx, Ny);
 
 if isempty(arg.mu)
 	mu1 = 1/(arg.kapp - 1);
-	mu0 = (arg.kapp - 1) *mu1 / 4;       
+	w = (arg.betaw / arg.beta).^2 * (arg.alphw .^2 + (1 - arg.alphw).^2);
+	mu0 = (arg.kapp - 1) * mu1 / (8 - (arg.kapp - 1) * w);       
 else
 	mu0 = arg.mu{1};
 	mu1 = arg.mu{2};

@@ -96,7 +96,7 @@ end
 if wavelets
 %       betaw = ??;
 %       betaw_circ = ??;
-	alphw = 1;
+	alphw = 0.5;
 	CHW = [CH; betaw * alphw / beta * W];
 	CVW = [CV; betaw * (1-alphw) / beta * W]; 
 	RW = [CHW; CVW];
