@@ -60,8 +60,13 @@ function [xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = MFISTA_wrapper(Nx, Ny, R, y, xi
 	params.mEAWA = mEAWA;
 	params.xinf = zeros(Nx,Ny); 
 	params.xinfnorm = 1;
-
+	params.dosingle = 0;
 	params = vararg_pair(params, varargin);
+	if params.dosingle
+		data = single(data);
+		xini = single(xinit);
+	end
+
 	[xMFIS, CMFIS, TFIS, l2DFIS, RMSEFIS] = runMFISTA(data, AWy, xini, params);
 	if norm(xMFIS - xini) == 0
 		display('problem: MFISTA did nothing, check mEAWA and dgrad sign');

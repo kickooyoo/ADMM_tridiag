@@ -80,10 +80,12 @@ if isempty(arg.mu)
 	mu1 = c*(arg.kapp - 1)./(RRmaxy - (arg.kapp - 1) * w);
 	mu0 = c*(arg.kapp - 1)./(RRmaxx - (arg.kapp - 1) * w);
 	mu2 = c - max(arg.alph.^2, (1-arg.alph).^2)*eig_DD;
+	mu3 = mu2;
 else
 	mu0 = arg.mu{1};
 	mu1 = arg.mu{2};
 	mu2 = arg.mu{3};
+	mu3 = arg.mu{4};
 end
 
 tic
@@ -99,9 +101,11 @@ y = single(y);
 u0 = CH * x;
 u2 = x;
 u1 = CV * u2;
+v = x;
 eta0 = zeros(size(u0));
 eta1 = zeros(size(u1));
 eta2 = zeros(size(u2));
+eta3 = zeros(size(v));
 % renaming to match paper indices
 
 if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
@@ -118,21 +122,21 @@ if isempty(arg.potx) || isempty(arg.poty) || (mu0 ~= mu1)
 end
 shrinkx = @(a, t) arg.potx.shrink(a, t);
 shrinky = @(a, t) arg.poty.shrink(a, t);
-calc_cost_tridiag_inpaint = @(beta, CH, CV, D, y, x) norm(double(col(y) - col(D * x)),2)^2/2 + ...
-        sum(col(beta(:) .* arg.potx.potk(col(CH * x))), 'double') + sum(col(beta(:) .* arg.poty.potk(col(CV * x))),'double');
+%calc_cost_tridiag_inpaint = @(beta, CH, CV, D, y, x) norm(double(col(y) - col(D * x)),2)^2/2 + ...
+%        sum(col(beta(:) .* arg.potx.potk(col(CH * x))), 'double') + sum(col(beta(:) .* arg.poty.potk(col(CV * x))), 'double');
 
 % pass tridiag of C'C into mex
 % subCC = - mu0 * I, subCCT = - mu1 * I
 % diagCC = mu0 * Ch'*Ch + mu2 + mu0 * betaw * alphaw /beta
 % diagCCT = mu1 * Cv'*Cv + mu2 + mu1 * betaw * (1-alphw) / beta
-[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu2, Nx, Ny, beta, 'betaw', arg.betaw, 'alphw', arg.alphw); 
+[subCC, subCCT, diagCC, diagCCT] = construct_Hessian_diags(mu0, mu1, mu2, mu3, Nx, Ny, beta, 'betaw', arg.betaw, 'alphw', arg.alphw); 
 
 if arg.compile_mex
         confirm_compile('tridiag_inv_mex_noni');
 end
 
 err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
-cost(1) = calc_cost_tridiag_inpaint(beta, CH, CV, D, y, x);
+cost(1) = calc_cost_tridiag_inpaint(y, D, CH, CV, x, beta);
 time(1) = toc;
 tridiag_time(1) = 0;
 %while(iter < niters)
@@ -144,11 +148,13 @@ for iter = 1:niters
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
         %try
-        u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, ...
+        u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, -v, ...
                 eta1, eta2, subCCT, diagCCT, arg.nthread);
         if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
-        x = x_update(mu0, mu2, arg.alph, eig_DD, CH, D, y, u0, u2, ...
+        x = x_update(mu0, mu3, arg.alph, eig_DD, CH, D, y, u0, -v, ...
                 eta0, eta2, subCC, diagCC, arg.nthread);
+%	v = (mu2*(u2 - eta2) + mu_3*(x + eta3))./(mu2 + mu3);
+	v = (mu2(:).*col(- u2 - eta2) + mu3(:).*col(- x + eta3))./col(mu2 + mu3);
         if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
         %catch
         %        keyboard
@@ -156,10 +162,12 @@ for iter = 1:niters
         tridiag_time(iter + 1) = toc(tridiag_tic);
         
         if arg.debug
-                subplot(2,2,1); im(reshape(x, Nx, Ny));
-		subplot(2,2,2); im(reshape(u2, Nx, Ny));
-		subplot(2,2,3); im(reshape(u0, Nx, Ny));
-                subplot(2,2,4); im(reshape(u1, Nx, Ny));
+                subplot(2,3,1); im(reshape(x, Nx, Ny));
+		subplot(2,3,2); im(reshape(u2, Nx, Ny));
+		subplot(2,3,4); im(reshape(u0, Nx, Ny, 1 + (arg.betaw ~= 0)));
+                subplot(2,3,5); im(reshape(u1, Nx, Ny, 1 + (arg.betaw ~= 0)));
+		subplot(2,3,3); plot(cost);
+		subplot(2,3,6); plot(err)
 		drawnow;
 		pause(1);
         end
@@ -167,7 +175,8 @@ for iter = 1:niters
         % eta updates
         eta0 = eta0 - (-u0 + CH * x);
         eta1 = eta1 - (-u1 + CV * u2);
-        eta2 = eta2 - (-u2 + x);
+        eta2 = eta2 - (-u2 - v);
+	eta3 = eta3 - (v + x);
         
         time(iter + 1) = toc(iter_start);
 	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
@@ -177,12 +186,12 @@ for iter = 1:niters
         end
 
 	if (mod(iter,1000) == 0) && ~isempty(arg.save_progress)
-		save(sprintf('tmp_%s',arg.save_progress), 'x');
+		save(arg.save_progress);
 	end
 	if arg.output_xsaved
 		xsaved(:,:,iter) = reshape(x, Nx, Ny);
 	end
-        cost(iter + 1) = calc_cost_tridiag_inpaint(beta, CH, CV, D, y, x);
+        cost(iter + 1) = calc_cost_tridiag_inpaint(y, D, CH, CV, x, beta);
 end
 x = reshape(x, Nx, Ny);
 if strcmp(arg.timing, 'tridiag')

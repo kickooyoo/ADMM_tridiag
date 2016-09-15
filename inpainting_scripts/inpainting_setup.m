@@ -4,7 +4,7 @@ if ~isvar('wavelets')
 end
 % ------ construct true image ------
 if ~isvar('obj')
-	obj = 'glass'; % 'textbook';
+	obj = 'textbook';%'glass'; % 'textbook';
 end
 switch obj
 case 'glass'
@@ -36,14 +36,15 @@ end
 [Nx, Ny] = size(xtrue);
 
 if ~isvar('reduce')
-	reduce = 2;
+	reduce = 4;
 end
 if ~isvar('SNR')
-	SNR = 10;
+	SNR = 20;
 end
-data_fname = sprintf('./inpainting_mat/%s/data_wavelet%d_SNR%d_reduce%d', obj, wavelets, SNR, reduce);
+data_fname = sprintf('./inpainting_mat/%s/data_wavelet%d_SNR%d_reduce%d.mat', obj, wavelets, SNR, reduce);
 if exist(data_fname, 'file')
 	load(data_fname);
+	display(sprintf('loaded data from file %s', data_fname))
 else
 	% ------ take measurements ------
 	try
@@ -63,7 +64,7 @@ else
 	xx_D = xx(samp);
 	yy_D = yy(samp);
 	xinit = griddata(xx_D, yy_D, y, xx, yy, 'nearest');
-	save(data_fname, 'reduce', 'samp', 'D', 'CH', 'CV', 'SNR', 'y_noiseless', 'y', 'sig', 'xinit');
+	save(data_fname, 'reduce', 'samp', 'D', 'CH', 'CV', 'SNR', 'y_noiseless', 'y', 'sig', 'xinit', 'xtrue');
 end
 % ------ construct regularizers ------- 
 R = [CH; CV];
@@ -110,7 +111,7 @@ if wavelets
 	alphw = 0.5;
 	CHW = [CH; betaw * alphw / beta * W];
 	CVW = [CV; betaw * (1-alphw) / beta * W]; 
-	RW = [CHW; CVW];
+	RW = [CH; CV; betaw / beta * W];
 	RcircW = [Rcirc; betaw_circ / beta_circ * W];
 else        
 	betaw = 0;
@@ -127,18 +128,37 @@ end
 curr_folder = sprintf('./inpainting_mat/%s/', obj);
 slice_str = sprintf('wavelet%d_SNR%d_reduce%1.2d', wavelets, SNR, reduce);
 if ~isvar('true_opt')
-true_opt = 'true';%'inf'; % true
+	true_opt = 'avg';%'inf'; % true
 end
 
 
-if strcmp(true_opt, 'inf')
+if ~alphw == 1
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
+else
+	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
+end
+ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
+if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM')
 	if exist(MFISTA_inf_fname, 'file')
 		load(MFISTA_inf_fname, 'xMFIS');
-		xtrue = xMFIS;
+		display(sprintf('loaded MFISTA inf from file %s', MFISTA_inf_fname));
 	else
 		display('no inf found')
 		keyboard;
 	end
-end
+	if exist(ADMM_inf_fname, 'file')
+		load(ADMM_inf_fname, 'x_ADMM_inf');
+		display(sprintf('loaded ADMM inf from file %s', ADMM_inf_fname));
+	else
+		display('no  ADMM inf found')
+		keyboard;
+	end
 
+	if strcmp(true_opt, 'inf')
+		xtrue = xMFIS;
+	elseif strcmp(true_opt, 'ADMM')
+		xtrue = x_ADMM_inf;
+	elseif strcmp(true_opt, 'avg')
+		xtrue = mean(cat(3, xMFIS, x_ADMM_inf),3);
+	end
+end

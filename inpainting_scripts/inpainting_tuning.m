@@ -7,8 +7,8 @@ if exist(save_fname, 'file')
 	keyboard;
 end
 
-kapps = [2 3 4 6 8 12];
-poss = [0.01 0.1 1];
+kapps = [6 7 8 10 12];
+poss = [0.005 0.01 0.05];
 for aa = 1:length(kapps)
 	for pp = 1:length(poss)
 		pos = poss(pp);
@@ -16,9 +16,9 @@ for aa = 1:length(kapps)
 		[x(:,:,aa,pp), ~, err(:,aa,pp), cost(:,aa,pp), time(:,aa,pp)] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
 			beta, xinit, xtrue, niters, 'betaw', betaw, 'alphw', alphw, 'kapp', kapp, 'pos', pos);
 	end
+	save(save_fname)
 end
 
-save(save_fname)
 
 if 0 
 	figure; plot(cumsum(time), err)
