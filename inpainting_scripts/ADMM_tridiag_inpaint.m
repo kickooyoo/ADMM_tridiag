@@ -151,16 +151,7 @@ tridiag_time(1) = 0;
 %while(iter < niters)
 for iter = 1:niters
         iter_start = tic;
-        if strcmp(arg.timing, 'indiv'), u0_time = tic; end
-        u0 = shrinkx(CH * x - eta0, beta./mu0);
         if strcmp(arg.timing, 'indiv')
-                all_time.u0(iter) = toc(u0_time); 
-                u1_time = tic; 
-        end
-        if any(isnan(u0(:))) || any(u0(:) > 1e5), keyboard; end
-        u1 = shrinky(CV * u2 - eta1, beta./mu1);
-        if strcmp(arg.timing, 'indiv')
-                all_time.u1(iter) = toc(u1_time); 
                 u2_time = tic; 
         end
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
@@ -185,9 +176,22 @@ for iter = 1:niters
                 if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
                 if strcmp(arg.timing, 'indiv')
                         all_time.x(iter) = toc(x_time);
-                        v_time = tic;
+			u0_time = tic; 
                 end
         end
+        CHx = CH*x;
+	CVu2 = CV*u2;
+	u0 = shrinkx(CHx - eta0, beta./mu0);
+        if strcmp(arg.timing, 'indiv')
+                all_time.u0(iter) = toc(u0_time); 
+                u1_time = tic; 
+        end
+        if any(isnan(u0(:))) || any(u0(:) > 1e5), keyboard; end
+        u1 = shrinky(CVu2 - eta1, beta./mu1);
+        if strcmp(arg.timing, 'indiv')
+                all_time.u1(iter) = toc(u1_time); 
+                v_time = tic;
+	end
         %v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
         v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
         if strcmp(arg.timing, 'indiv')
@@ -211,8 +215,8 @@ for iter = 1:niters
         end
         
         % eta updates
-        eta0 = eta0 - (-u0 + CH * x);
-        eta1 = eta1 - (-u1 + CV * u2);
+        eta0 = eta0 - (-u0 + CHx);
+        eta1 = eta1 - (-u1 + CVu2);
         eta2 = eta2 - (-u2 + v);
 	eta3 = eta3 - (- v + x);
         if strcmp(arg.timing, 'indiv'), all_time.eta(iter) = toc(eta_time); end
@@ -234,6 +238,8 @@ end
 x = reshape(x, Nx, Ny);
 if strcmp(arg.timing, 'tridiag')
 	time = tridiag_time;
+elseif strcmp(arg.timing, 'indiv')
+	time = all_time;
 end
 
 if ~arg.output_xsaved
@@ -271,7 +277,7 @@ end
 
 function u2 = u2_update_nf(mu1, mu2, alph, CV, samp, y, u1, x, v, ...
         eta1, eta2, subCCT, diagvals, nthread, Nx, Ny)
-u2arg = mu1(:) .* (CV' * (u1 + eta1)) + (1-alph) * embed(y - alph * masker(x, samp), samp) + ...
+u2arg = mu1(:) .* (CV' * (u1 + eta1)) + (1-alph) * col(embed(y - alph * masker(x, samp), samp)) + ...
         mu2(:) .* (v - eta2);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
@@ -287,7 +293,7 @@ end
 
 function x = x_update_nf(mu0, mu3, alph, CH, samp, y, u0, u2, v, ...
         eta0, eta3, subCC, diagvals, nthread, Nx, Ny)
-xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * embed(y - (1- alph) * masker(u2, samp), samp) + ...
+xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * col(embed(y - (1- alph) * masker(u2, samp), samp)) + ...
         mu3(:) .* (v + eta3);
 xarg = reshape(xarg, Nx, Ny);
 
