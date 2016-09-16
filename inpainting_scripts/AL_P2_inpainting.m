@@ -124,27 +124,29 @@ time(1) = toc;
 for ii = 1:niters
         iter_start = tic;
         
-        u0 = shrink(R*x + eta_0, lambda/mu0); 
         u1 = u1_update(D, y, x, eta_1, mu1, Nx*Ny, Hu1);
         x = x_update(Q, A_CG, W_CG, P_CG, u0, u1, x, mu0, mu1, R, ...
                 eta_0, eta_1, eigvalsrr, Nx, Ny, arg);
+        Rx = R*x;
+        u0 = shrink(Rx + eta_0, lambda/mu0); 
         
         if any(isnan(x)) || any(isinf(x))
                 keyboard
         end
-	if arg.debug
-		subplot(2,2,1); im(reshape(x, Nx, Ny));
-                title(sprintf('cost: %2.2f', calc_orig_cost(y, D, R, x, lambda)));
-		subplot(2,2,2); im(reshape(u0(1:numel(x)), Nx, Ny));
-                subplot(2,2,3); im(reshape(u0(numel(x)+1:end), Nx, Ny));
-		subplot(2,2,4); im(reshape(u1, Nx, Ny));
-		drawnow;
-		pause(0.2);
-	end
 
-        eta_0 = eta_0 - (u0 - R*x);
+        eta_0 = eta_0 - (u0 - Rx);
         eta_1 = eta_1 - (u1 - x);
         time = [time toc(iter_start)];
+        if arg.debug
+                subplot(2,2,1); im(reshape(x, Nx, Ny));
+                title(sprintf('cost: %2.2f', calc_orig_cost(y, D, R, x, lambda)));
+                subplot(2,2,2); im(reshape(u0(1:numel(x)), Nx, Ny));
+                subplot(2,2,3); im(reshape(u0(numel(x)+1:end), Nx, Ny));
+                subplot(2,2,4); im(reshape(u1, Nx, Ny));
+                drawnow;
+                pause(0.2);
+        end
+        
         if (calc_errcost)
                 err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, D, R, x, lambda);

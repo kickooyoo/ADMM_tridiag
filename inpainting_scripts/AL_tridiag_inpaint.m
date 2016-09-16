@@ -136,6 +136,11 @@ if ~arg.Dfatrix
         Dsamp = D.arg.samp;
 end
 
+% precompute
+flipDD = eig_DD.';
+diagvalsCCT = diagCCT + (1-arg.alph)^2 * flipDD; % mu1 Cv'Cv + mu2 I
+diagvalsCC = diagCC + arg.alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
+
 err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost_tridiag_inpaint(beta, CH, CV, D, y, x);
 time(1) = toc;
@@ -143,10 +148,6 @@ tridiag_time(1) = 0;
 %while(iter < niters)
 for iter = 1:niters
         iter_start = tic;
-        u0 = shrinkx(CH * x - eta0, beta./mu0);
-        if any(isnan(u0(:))) || any(u0(:) > 1e5), keyboard; end
-        u1 = shrinky(CV * u2 - eta1, beta./mu1);
-        if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
         if arg.Dfatrix
                 u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, ...
@@ -156,14 +157,29 @@ for iter = 1:niters
                         eta0, eta2, subCC, diagCC, arg.nthread);
                 if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
         else
-                u2 = u2_update_nf(mu1, mu2, arg.alph, eig_DD, CV, Dsamp, y, u1, x, ...
-                        eta1, eta2, subCCT, diagCCT, arg.nthread, Nx, Ny);
+                u2 = u2_update_nf(mu1, mu2, arg.alph, CV, Dsamp, y, u1, x, ...
+                        eta1, eta2, subCCT, diagvalsCCT, arg.nthread, Nx, Ny);
                 if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
-                x = x_update_nf(mu0, mu2, arg.alph, eig_DD, CH, Dsamp, y, u0, u2, ...
-                        eta0, eta2, subCC, diagCC, arg.nthread, Nx, Ny);
+                x = x_update_nf(mu0, mu2, arg.alph, CH, Dsamp, y, u0, u2, ...
+                        eta0, eta2, subCC, diagvalsCC, arg.nthread, Nx, Ny);
                 if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
         end
         tridiag_time(iter + 1) = toc(tridiag_tic);
+        % compute once
+        CHx = CH*x;
+        CVu2 = CV*u2;
+        u0 = shrinkx(CHx - eta0, beta./mu0);
+        if any(isnan(u0(:))) || any(u0(:) > 1e5), keyboard; end
+        u1 = shrinky(CVu2 - eta1, beta./mu1);
+        if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
+        
+        % eta updates
+        eta0 = eta0 - (-u0 + CHx);
+        eta1 = eta1 - (-u1 + CVu2);
+        eta2 = eta2 - (-u2 + x);
+        
+        time(iter + 1) = toc(iter_start);
+	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
         
         if arg.debug
                 subplot(2,2,1); im(reshape(x, Nx, Ny));
@@ -174,14 +190,6 @@ for iter = 1:niters
 		pause(1);
         end
         
-        % eta updates
-        eta0 = eta0 - (-u0 + CH * x);
-        eta1 = eta1 - (-u1 + CV * u2);
-        eta2 = eta2 - (-u2 + x);
-        
-        time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
-
         if mod(iter,100) == 0
                 printf('%d/%d iterations',iter,niters)
         end
@@ -233,17 +241,14 @@ x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
 
 end
 
-function u2 = u2_update_nf(mu1, mu2, alph, eig_DD, CV, samp, y, u1, x, ...
-        eta1, eta2, subCCT, diagCCT, nthread, Nx, Ny)
+function u2 = u2_update_nf(mu1, mu2, alph, CV, samp, y, u1, x, ...
+        eta1, eta2, subCCT, diagvals, nthread, Nx, Ny)
 u2arg = mu1(:) .* (CV' * (u1 + eta1)) + (1-alph) * embed(y - alph * masker(x, samp), samp) + ...
         mu2(:) .* (x - eta2);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
 flipu2arg = reshape(u2arg, Nx, Ny);
 flipu2arg = flipu2arg.';
-flipDD = eig_DD.';
-
-diagvals = diagCCT + (1-alph)^2 * flipDD; % mu1 Cv'Cv + mu2 I
 u2out = tridiag_inv_mex_noni(subCCT, diagvals, subCCT, flipu2arg, nthread);
 
 % transpose solution back
@@ -251,12 +256,11 @@ flipu2 = reshape(u2out, Ny, Nx);
 u2 = col(flipu2.');
 end
 
-function x = x_update_nf(mu0, mu2, alph, eig_DD, CH, samp, y, u0, u2, ...
-        eta0, eta2, subCC, diagCC, nthread, Nx, Ny)
+function x = x_update_nf(mu0, mu2, alph, CH, samp, y, u0, u2, ...
+        eta0, eta2, subCC, diagvals, nthread, Nx, Ny)
 xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * embed(y - (1- alph) * masker(u2, samp), samp) + ...
         mu2(:) .* (u2 + eta2);
 xarg = reshape(xarg, Nx, Ny);
-diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
 
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
 
