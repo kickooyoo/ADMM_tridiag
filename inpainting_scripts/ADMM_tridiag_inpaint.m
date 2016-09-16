@@ -101,7 +101,7 @@ y = single(y);
 u0 = CH * x;
 u2 = x;
 u1 = CV * u2;
-v = x;
+v = x; %zeros(size(x));
 eta0 = zeros(size(u0));
 eta1 = zeros(size(u1));
 eta2 = zeros(size(u2));
@@ -148,13 +148,13 @@ for iter = 1:niters
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
         %try
-        u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, -v, ...
+        u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, v, ...
                 eta1, eta2, subCCT, diagCCT, arg.nthread);
         if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
-        x = x_update(mu0, mu3, arg.alph, eig_DD, CH, D, y, u0, -v, ...
-                eta0, eta2, subCC, diagCC, arg.nthread);
-%	v = (mu2*(u2 - eta2) + mu_3*(x + eta3))./(mu2 + mu3);
-	v = (mu2(:).*col(- u2 - eta2) + mu3(:).*col(- x + eta3))./col(mu2 + mu3);
+        x = x_update(mu0, mu3, arg.alph, eig_DD, CH, D, y, u0, u2, v, ...
+                eta0, eta3, subCC, diagCC, arg.nthread);
+	%v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
+	v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
         if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
         %catch
         %        keyboard
@@ -175,8 +175,8 @@ for iter = 1:niters
         % eta updates
         eta0 = eta0 - (-u0 + CH * x);
         eta1 = eta1 - (-u1 + CV * u2);
-        eta2 = eta2 - (-u2 - v);
-	eta3 = eta3 - (v + x);
+        eta2 = eta2 - (-u2 + v);
+	eta3 = eta3 - (- v + x);
         
         time(iter + 1) = toc(iter_start);
 	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
@@ -203,10 +203,10 @@ if ~arg.output_xsaved
 end
 end
 
-function u2 = u2_update(mu1, mu2, alph, eig_DD, CV, D, y, u1, x, ...
+function u2 = u2_update(mu1, mu2, alph, eig_DD, CV, D, y, u1, x, v, ...
         eta1, eta2, subCCT, diagCCT, nthread)
 u2arg = mu1(:) .* (CV' * (u1 + eta1)) + (1-alph) * D' * (y - alph * D * x) + ...
-        mu2(:) .* (x - eta2);
+        mu2(:) .* (v - eta2);
 
 % transpose to make Hessian tridiagonal, size now Ny Nx
 flipu2arg = reshape(u2arg, D.arg.Nx, D.arg.Ny);
@@ -221,37 +221,12 @@ flipu2 = reshape(u2out, D.arg.Ny, D.arg.Nx);
 u2 = col(flipu2.');
 end
 
-function x = x_update(mu0, mu2, alph, eig_DD, CH, D, y, u0, u2, ...
-        eta0, eta2, subCC, diagCC, nthread)
+function x = x_update(mu0, mu3, alph, eig_DD, CH, D, y, u0, u2, v, ...
+        eta0, eta3, subCC, diagCC, nthread)
 xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * D' * (y - (1- alph) * D * u2) + ...
-        mu2(:) .* (u2 + eta2);
+        mu3(:) .* (v + eta3);
 xarg = reshape(xarg, D.arg.Nx, D.arg.Ny);
 diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
 
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
-if 0
-NH = D.arg.Nx*D.arg.Ny;
-H = spdiags([col([subCC; zeros(1, D.arg.Ny)]), diagvals(:), col([zeros(1, D.arg.Ny); subCC])], [-1 0 1], NH, NH);
-test_x = H\double(xarg(:));
-
-display('starting full matrix comparison')
-keyboard
-CHCH = full(CH'*CH);  
-H_full = alph^2 * diag(eig_DD(:)) + mu0 * full(CH'*CH) + mu2 * diag(ones(numel(eig_DD),1));
-H_full_sub = diag(H_full, -1);
-H_full_sup = diag(H_full, 1);
-H_full_diag = diag(H_full);
-H_full_tri = diag(H_full_sub, -1) + diag(H_full_diag) + diag(H_full_sup, 1);
-test_x_full = H_full\xarg(:);
-
-unique(diagCC)
-unique(mu0*CHCH + mu2)
-keyboard
-
-if norm(test_x - x) > 1e-5, 
-	display('bad match');
-	keyboard; 
-end
-
-end
 end

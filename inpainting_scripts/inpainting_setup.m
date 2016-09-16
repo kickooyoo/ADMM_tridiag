@@ -73,7 +73,7 @@ if wavelets
 	W = Godwt1(true(Nx, Ny));
 end
 % ------ optimization params ------
-niters = 100;
+niters = 2000;
 mu0 = 1;
 mu1 = 1;
 mu2 = 1;
@@ -147,7 +147,11 @@ if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM'
 		keyboard;
 	end
 	if exist(ADMM_inf_fname, 'file')
-		load(ADMM_inf_fname, 'x_ADMM_inf');
+		load(ADMM_inf_fname, 'x*');
+		if ~isvar('x_ADMM_inf') && isvar('x')
+			x_ADMM_inf = reshape(x, Nx, Ny);
+			clear x;
+		end
 		display(sprintf('loaded ADMM inf from file %s', ADMM_inf_fname));
 	else
 		display('no  ADMM inf found')

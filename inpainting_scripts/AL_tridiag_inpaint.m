@@ -220,29 +220,5 @@ xarg = reshape(xarg, D.arg.Nx, D.arg.Ny);
 diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
 
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
-if 0
-NH = D.arg.Nx*D.arg.Ny;
-H = spdiags([col([subCC; zeros(1, D.arg.Ny)]), diagvals(:), col([zeros(1, D.arg.Ny); subCC])], [-1 0 1], NH, NH);
-test_x = H\double(xarg(:));
 
-display('starting full matrix comparison')
-keyboard
-CHCH = full(CH'*CH);  
-H_full = alph^2 * diag(eig_DD(:)) + mu0 * full(CH'*CH) + mu2 * diag(ones(numel(eig_DD),1));
-H_full_sub = diag(H_full, -1);
-H_full_sup = diag(H_full, 1);
-H_full_diag = diag(H_full);
-H_full_tri = diag(H_full_sub, -1) + diag(H_full_diag) + diag(H_full_sup, 1);
-test_x_full = H_full\xarg(:);
-
-unique(diagCC)
-unique(mu0*CHCH + mu2)
-keyboard
-
-if norm(test_x - x) > 1e-5, 
-	display('bad match');
-	keyboard; 
-end
-
-end
 end

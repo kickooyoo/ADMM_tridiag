@@ -1,7 +1,7 @@
 % generate xinf for tridiag experiment
 niters_inf = 50000;
 
-do_MFISTA = 1;
+do_MFISTA = 0;
 if do_MFISTA
 	[xMFIS, CMFIS, TFIS, ~, ~] = MFISTA_inpainting_wrapper(Nx, Ny, RW, y, xinit, D, beta, niters_inf, curr_folder, slice_str);
 	save(MFISTA_inf_fname, 'xMFIS', 'niters_inf', 'CMFIS', 'TFIS');
