@@ -62,6 +62,7 @@ arg.poty = [];
 arg.kapp = 4;
 arg.pos = 0.1;
 arg.output_xsaved = 0;
+arg.Dfatrix = false;
 arg = vararg_pair(arg, varargin);
 
 % eigvals for DD, get mus
@@ -135,6 +136,10 @@ if arg.compile_mex
         confirm_compile('tridiag_inv_mex_noni');
 end
 
+if ~arg.Dfatrix 
+        Dsamp = D.arg.samp;
+end
+
 err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost_tridiag_inpaint(y, D, CH, CV, x, beta);
 time(1) = toc;
@@ -147,15 +152,23 @@ for iter = 1:niters
         u1 = shrinky(CV * u2 - eta1, beta./mu1);
         if any(isnan(u1(:))) || any(u1(:) > 1e5), keyboard; end
         tridiag_tic = tic;
-        %try
-        u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, v, ...
-                eta1, eta2, subCCT, diagCCT, arg.nthread);
-        if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
-        x = x_update(mu0, mu3, arg.alph, eig_DD, CH, D, y, u0, u2, v, ...
-                eta0, eta3, subCC, diagCC, arg.nthread);
-	%v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
-	v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
-        if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
+        if arg.Dfatrix
+                u2 = u2_update(mu1, mu2, arg.alph, eig_DD, CV, D, y, u1, x, v, ...
+                        eta1, eta2, subCCT, diagCCT, arg.nthread);
+                if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
+                x = x_update(mu0, mu3, arg.alph, eig_DD, CH, D, y, u0, u2, v, ...
+                        eta0, eta3, subCC, diagCC, arg.nthread);
+                if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
+        else
+                u2 = u2_update_nf(mu1, mu2, arg.alph, eig_DD, CV, D.arg.samp, y, u1, x, v, ...
+                        eta1, eta2, subCCT, diagCCT, arg.nthread, Nx, Ny);
+                if any(isnan(u2(:))) || any(u2(:) > 1e5), keyboard; end
+                x = x_update_nf(mu0, mu3, arg.alph, eig_DD, CH, D.arg.samp, y, u0, u2, v, ...
+                        eta0, eta3, subCC, diagCC, arg.nthread, Nx, Ny);
+                if any(isnan(x(:))) || any(x(:) > 1e5), keyboard; end
+        end
+        %v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
+        v = (mu2(:).*col(u2 + eta2) + mu3(:).*col(x - eta3))./col(mu2 + mu3);
         %catch
         %        keyboard
         %end
@@ -226,6 +239,34 @@ function x = x_update(mu0, mu3, alph, eig_DD, CH, D, y, u0, u2, v, ...
 xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * D' * (y - (1- alph) * D * u2) + ...
         mu3(:) .* (v + eta3);
 xarg = reshape(xarg, D.arg.Nx, D.arg.Ny);
+diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
+
+x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
+end
+
+function u2 = u2_update_nf(mu1, mu2, alph, eig_DD, CV, samp, y, u1, x, v, ...
+        eta1, eta2, subCCT, diagCCT, nthread, Nx, Ny)
+u2arg = mu1(:) .* (CV' * (u1 + eta1)) + (1-alph) * embed(y - alph * masker(x, samp), samp) + ...
+        mu2(:) .* (v - eta2);
+
+% transpose to make Hessian tridiagonal, size now Ny Nx
+flipu2arg = reshape(u2arg, Nx, Ny);
+flipu2arg = flipu2arg.';
+flipDD = eig_DD.';
+
+diagvals = diagCCT + (1-alph)^2 * flipDD; % mu1 Cv'Cv + mu2 I
+u2out = tridiag_inv_mex_noni(subCCT, diagvals, subCCT, flipu2arg, nthread);
+
+% transpose solution back
+flipu2 = reshape(u2out, Ny, Nx); 
+u2 = col(flipu2.');
+end
+
+function x = x_update_nf(mu0, mu3, alph, eig_DD, CH, samp, y, u0, u2, v, ...
+        eta0, eta3, subCC, diagCC, nthread, Nx, Ny)
+xarg = mu0(:) .* (CH' * (u0 + eta0)) + alph * embed(y - (1- alph) * masker(u2, samp), samp) + ...
+        mu3(:) .* (v + eta3);
+xarg = reshape(xarg, Nx, Ny);
 diagvals = diagCC + alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
 
 x = col(tridiag_inv_mex_noni(subCC, diagvals, subCC, xarg, nthread));
