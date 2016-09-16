@@ -140,6 +140,7 @@ if ~arg.Dfatrix
         Dsamp = D.arg.samp;
 end
 
+% precompute
 flipDD = eig_DD.';
 diagvalsCCT = diagCCT + (1-arg.alph)^2 * flipDD; % mu1 Cv'Cv + mu2 I
 diagvalsCC = diagCC + arg.alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
@@ -179,6 +180,7 @@ for iter = 1:niters
 			u0_time = tic; 
                 end
         end
+	% compute once
         CHx = CH*x;
 	CVu2 = CV*u2;
 	u0 = shrinkx(CHx - eta0, beta./mu0);
@@ -202,6 +204,15 @@ for iter = 1:niters
         %        keyboard
         %end
         tridiag_time(iter + 1) = toc(tridiag_tic);
+
+        % eta updates
+        eta0 = eta0 - (-u0 + CH * x);
+        eta1 = eta1 - (-u1 + CV * u2);
+        eta2 = eta2 - (-u2 + v);
+	eta3 = eta3 - (- v + x);
+        if strcmp(arg.timing, 'indiv'), all_time.eta(iter) = toc(eta_time); end
+        time(iter + 1) = toc(iter_start);
+	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
         
         if arg.debug
                 subplot(2,3,1); im(reshape(x, Nx, Ny));
@@ -214,15 +225,6 @@ for iter = 1:niters
 		pause(1);
         end
         
-        % eta updates
-        eta0 = eta0 - (-u0 + CHx);
-        eta1 = eta1 - (-u1 + CVu2);
-        eta2 = eta2 - (-u2 + v);
-	eta3 = eta3 - (- v + x);
-        if strcmp(arg.timing, 'indiv'), all_time.eta(iter) = toc(eta_time); end
-        time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
-
         if mod(iter,100) == 0
                 printf('%d/%d iterations',iter,niters)
         end
