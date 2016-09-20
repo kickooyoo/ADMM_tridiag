@@ -77,7 +77,7 @@ if isempty(arg.mu)
 	[eigV, eigD] = eigs(CCy);
 	RRmaxy = max(eigD(:));
 	c = max(arg.alph.^2, (1-arg.alph).^2) + arg.pos;
-	w = (arg.betaw * arg.alphw / beta ).^2;
+	w = (arg.betaw * arg.alphw / beta ).^2; % hardcoded for alphw = 0.5 :(
 	mu1 = c*(arg.kapp - 1)./(RRmaxy - (arg.kapp - 1) * w);
 	mu0 = c*(arg.kapp - 1)./(RRmaxx - (arg.kapp - 1) * w);
 	mu2 = c - max(arg.alph.^2, (1-arg.alph).^2)*eig_DD;

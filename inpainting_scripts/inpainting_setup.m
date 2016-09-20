@@ -73,12 +73,12 @@ if wavelets
 	W = Godwt1(true(Nx, Ny));
 end
 % ------ optimization params ------
-niters = 2000;
+niters = 10000;
 mu0 = 1;
 mu1 = 1;
 mu2 = 1;
 alph = 0.5;
-alphw = 0.5;
+alphw = 1;
 % ------ regularization parameters for SNR = 20, reduce = 1.5 ------
 beta_search_fname = sprintf('wavelet%d_SNR%d_reduce%1.2d.mat', wavelets, SNR, reduce);
 d = dir(sprintf('inpainting_mat/%s', obj));
@@ -108,9 +108,16 @@ end
 if wavelets
 %       betaw = ??;
 %       betaw_circ = ??;
-	alphw = 0.5;
-	CHW = [CH; betaw * alphw / beta * W];
-	CVW = [CV; betaw * (1-alphw) / beta * W]; 
+	if alphw == 0
+		CHW = CH;
+		CVW = [CV; betaw / beta * W]; 
+	elseif alphw == 1
+		CHW = [CH; betaw / beta * W];
+		CVW = CV; 
+	else
+		CHW = [CH; betaw * alphw / beta * W];
+		CVW = [CV; betaw * (1-alphw) / beta * W]; 
+	end
 	RW = [CH; CV; betaw / beta * W];
 	RcircW = [Rcirc; betaw_circ / beta_circ * W];
 else        
@@ -132,12 +139,13 @@ if ~isvar('true_opt')
 end
 
 
-if ~alphw == 1
+if (alphw == 1)
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
+	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 else
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
+	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
 end
-ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
 if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM')
 	if exist(MFISTA_inf_fname, 'file')
 		load(MFISTA_inf_fname, 'xMFIS');

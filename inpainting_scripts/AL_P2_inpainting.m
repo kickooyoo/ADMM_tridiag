@@ -49,14 +49,25 @@ arg.pot = [];
 arg.kapp = 12;
 arg.betaw = 0; % only used for tuning
 arg.alphw = 0.5; % only used for tuning
+arg.save_progress = [];
 arg = vararg_pair(arg, varargin);
 
 tic;
-RR = R'*R;
+if arg.betaw ~= 0
+	justR = R.arg.blocks{1};
+	justW = R.arg.blocks{2};
+	RR = justR'*justR ;%+ justW'*justW;
+else       
+	RR = R'*R;
+end
 Q = Gdft('mask', true(Nx, Ny));
 e0 = zeros(Nx, Ny);
 e0(1, 1) = 1; %end/2,end/2) = 1;
 eigvalsrr = reshape(Q * RR * e0(:), Nx, Ny); % approximate, for use in precon
+if arg.betaw ~= 0
+%	eigvalsrr = eigvalsrr + sqrt(Nx*Ny)* (arg.betaw/lambda).^2;
+end
+
 % eigvals for DD, get mus
 DD = D'*D;
 eigvalsdd = reshape(DD * ones(D.idim), Nx, Ny); 
@@ -99,7 +110,7 @@ else
 		display('can not figure out odim of R');
 		keyboard;
 	end
-        W_CG = Gdiag([mu0 * ones(1, Rodim) mu1 * ones(1, Nx*Ny)]); %???
+        W_CG = Gdiag([mu0 * ones(1, Rodim) mu1 * ones(1, Nx*Ny)]); 
 	if arg.precon
 		P_CG = qpwls_precon('circ0', {A_CG, W_CG}, Gdiag(zeros(Nx*Ny,1)), true(Nx, Ny)); 
 	else
@@ -109,8 +120,9 @@ end
 
 calc_errcost = 1;
 if (calc_errcost)
-        calc_orig_cost = @(y, D, R, x, lambda) norm(col(y - D*x),2)^2/2 + ...
-                lambda* sum(col(arg.pot.potk(col(R*x))));
+        calc_orig_cost = @(y, D, R, x, lambda) calc_cost_tridiag_inpaint(y, D, R, 0, x, lambda);
+	%norm(col(y - D*x),2)^2/2 + ...
+         %       lambda* sum(col(arg.pot.potk(col(R*x))));
         err = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
         costOrig = calc_orig_cost(y, D, R, x, lambda);
 end
@@ -124,7 +136,7 @@ time(1) = toc;
 for ii = 1:niters
         iter_start = tic;
         
-        u1 = u1_update(D, y, x, eta_1, mu1, Nx*Ny, Hu1);
+        u1 = u1_update(D, y, x, eta_1, mu1, Hu1);
         x = x_update(Q, A_CG, W_CG, P_CG, u0, u1, x, mu0, mu1, R, ...
                 eta_0, eta_1, eigvalsrr, Nx, Ny, arg);
         Rx = R*x;
@@ -137,22 +149,26 @@ for ii = 1:niters
         eta_0 = eta_0 - (u0 - Rx);
         eta_1 = eta_1 - (u1 - x);
         time = [time toc(iter_start)];
-        if arg.debug
+        if arg.debug && mod(ii, 10) == 0
                 subplot(2,2,1); im(reshape(x, Nx, Ny));
+                subplot(2,2,2); im(reshape(u0, numel(u0)/Ny, Ny));
+                subplot(2,2,3); im(reshape(u1, Nx, Ny));
+		subplot(2,2,4); plot(costOrig)
                 title(sprintf('cost: %2.2f', calc_orig_cost(y, D, R, x, lambda)));
-                subplot(2,2,2); im(reshape(u0(1:numel(x)), Nx, Ny));
-                subplot(2,2,3); im(reshape(u0(numel(x)+1:end), Nx, Ny));
-                subplot(2,2,4); im(reshape(u1, Nx, Ny));
                 drawnow;
-                pause(0.2);
+                keyboard;
         end
         
         if (calc_errcost)
                 err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, D, R, x, lambda);
         end
+	
         if mod(ii,100) == 0
                 printf('%d/%d iterations', ii, niters)
+        	if mod(ii,1000) == 0 &  ~isempty(arg.save_progress)
+			save(arg.save_progress)
+		end
         end
    	if arg.save_x
 	   	xsave(:,:,ii) = reshape(x, Nx, Ny);
@@ -165,7 +181,7 @@ if (~calc_errcost)
 end
 end
 
-function u1 = u1_update(D, y, x, eta_1, mu1, N, Hu1)
+function u1 = u1_update(D, y, x, eta_1, mu1, Hu1)
 rhs = D' * y + mu1 * (x + eta_1);
 u1 = rhs ./ Hu1(:);
 end
@@ -181,7 +197,7 @@ switch upper(arg.zmethod)
         case 'CG'
                 y = [u0 - eta_0; u1 - eta_1];
                 try
-                        [xs, info] = qpwls_pcg1(x, D, W, y, Gdiag(zeros(Nx*Ny, 1)), ...
+                        [xs, info] = qpwls_pcg1(double(x), D, W, double(y), Gdiag(zeros(Nx*Ny, 1)), ...
                                 'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', P);
 			x = xs;
                 catch
