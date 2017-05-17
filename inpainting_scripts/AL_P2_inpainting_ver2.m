@@ -1,13 +1,14 @@
-function [x, xsave, err, costOrig, time] = AL_P2_inpainting(y, D, R, ...
+function [x, xsave, err, costOrig, time] = AL_P2_inpainting_ver2(y, D, R, ...
         xinit, niters, lambda, xtrue, varargin)
-% function [x, xsave, err, costOrig, time] = AL_P2_gen(y, D, R, ...
+% function [x, xsave, err, costOrig, time] = AL_P2_inpainting_ver2(y, D, R, ...
 %         xinit, niters, lambda, xtrue, varargin)
 % 
 % implements AL-P2 with option for CG on x-update for noncirc R
-% min 1/2 ||y - Du1||^2 + beta ||u0||_1, u0 = Rx, u1 = x 
+% min 1/2 ||y - u2||^2 + beta ||u0||_1, u0 = Rx, u1 = x, u2 = Dx 
 %
-% min 1/2 ||y - Du1||^2 + beta ||u0||_1 + mu0/2||u0 - Rx||^2 + mu1/2||u1 - x||^2
+% min 1/2 ||y - u2||^2 + beta ||u0||_1 mu0/2||u0 - Rx||^2 + mu1/2||u1 - x||^2 + mu2/2||u2 - Dx||^2 
 %
+% additional variable split compared to AL_P2_inpainting
 % inputs:
 %       y [Ns 1] undersampled data vector
 %       D (fatrix2) undersampled Fourier encoding matrix
@@ -84,14 +85,19 @@ else
 	mu0 = arg.mu{1};
 	mu1 = arg.mu{2};
 end
+mu2 = 1; % not tuned!
 Hu1 = eigvalsdd + mu1;
+Hu2 = mu2 + 1;
+Hx = mu2 * eigvalsdd + mu1;
 
 y = single(y(:));
 x = single(xinit(:));
 u0 = R*x;
 u1 = x;
+u2 = D * x;
 eta_0 = zeros(size(u0));
 eta_1 = zeros(size(u1));
+eta_2 = zeros(size(u2));
 
 % shrinkage (e.g. soft thresholding) function, t is input, a is threshold
 if isempty(arg.pot)
@@ -140,23 +146,25 @@ time(1) = toc;
 for ii = 1:niters
         iter_start = tic;
         
-        u1 = u1_update(D, y, x, eta_1, mu1, Hu1);
-        x = x_update(Q, A_CG, W_CG, P_CG, u0, u1, x, mu0, mu1, R, ...
+        u2 = u2_update(D, y, x, eta_2, mu2, Hu2);
+        u1 = u1_update(Q, A_CG, W_CG, P_CG, u0, u1, x, mu0, mu1, R, ...
                 eta_0, eta_1, eigvalsrr, Nx, Ny, arg);
         try
-		Rx = R*x;
+		Ru1 = R * u1;
 	catch
 		display('fail Rx');
 		keyboard;
 	end
-        u0 = shrink(Rx + eta_0, lambda/mu0); 
-        
+        u0 = shrink(Ru1 + eta_0, lambda/mu0); 
+        x = (mu2 * D' * (u2 - eta_2) + mu1 * (u1 - eta_1)) ./ Hx(:);
+
         if any(isnan(x)) || any(isinf(x))
                 keyboard
         end
 
-        eta_0 = eta_0 - (u0 - Rx);
+        eta_0 = eta_0 - (u0 - Ru1);
         eta_1 = eta_1 - (u1 - x);
+	eta_2 = eta_2 - (u2 - D * x);
         time = [time toc(iter_start)];
         if arg.debug && mod(ii, 10) == 0
                 subplot(2,2,1); im(reshape(x, Nx, Ny));
@@ -190,24 +198,24 @@ if (~calc_errcost)
 end
 end
 
-function u1 = u1_update(D, y, x, eta_1, mu1, Hu1)
-rhs = D' * y + mu1 * (x + eta_1);
-u1 = rhs ./ Hu1(:);
+function u2 = u2_update(D, y, x, eta_2, mu2, Hu2)
+rhs = y + mu2 * (D * x + eta_2);
+u2 = rhs ./ Hu2(:);
 end
 
-% x-update
+% u1-update
 % problematic for non-circulant R
-% x = argmin (mu0 R'R + u1 I)^(-1)(mu0 R'(u0 - eta_0) + mu1 (x + eta_1))
-% x = argmin mu0/2 ||u0 - Rx + eta_0||^2 + mu1/2 ||u1 - x - eta_1||^2
-function x = x_update(Q, D, W, P, u0, u1, x, mu0, mu1, R, eta_0, eta_1, ...
+% u1 = (mu0 R'R + u1 I)^(-1)(mu0 R'(u0 - eta_0) + mu1 (x + eta_1))
+% u1 = argmin mu0/2 ||u0 - R*u1 + eta_0||^2 + mu1/2 ||u1 - x - eta_1||^2
+function u1 = u1_update(Q, D, W, P, u0, u1, x, mu0, mu1, R, eta_0, eta_1, ...
         eigvalsrr, Nx, Ny, arg)
 % (Q, D, W, P, v, x, z, mu1, u_z, R, eta_1, eta_z, eigvalsrr, Nx, Ny, arg)
 switch upper(arg.zmethod)
         case 'CG'
-                y = [u0 - eta_0; u1 - eta_1];
+                y = [u0 - eta_0; x + eta_1];
                 try
-                        [xs, info] = qpwls_pcg1(double(x), D, W, double(y), Gdiag(zeros(Nx*Ny, 1)), ...
-                                'niter', arg.inner_iter, 'stop_grad_tol', 1e-13, 'precon', P);
+                        [xs, info] = qpwls_pcg1(double(u1), D, W, double(y), Gdiag(zeros(Nx*Ny, 1)), ...
+                                'niter', arg.inner_iter);%, 'stop_grad_tol', 1e-13, 'precon', P);
 			x = xs;
                 catch
                         display('qpwls failed');

@@ -43,7 +43,7 @@ switch machine
 	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
 	home_path = '~/iv1h/';
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
-    case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu', 'ir71.eecs.umich.edu'}
+    case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu', 'ir71.eecs.umich.edu', 'ir74'}
         addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
 	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
         addpath(genpath(sprintf('%sDocuments/mai_code/util', home)))

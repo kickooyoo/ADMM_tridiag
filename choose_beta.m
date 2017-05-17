@@ -23,8 +23,9 @@ switch reduction
 case {4, 6}
 	beta = 2^12;% cannot find file, need to regen
 	beta = 2^13;
+	beta = 2^10;
 case 10
-	beta = 2^14;
+	beta = 2^12;
 otherwise 
 	display('unknown which is best beta, choosing 2^13 arbitrarily');
 	beta = 2^13;

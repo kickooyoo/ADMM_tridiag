@@ -20,7 +20,7 @@ if exist(save_fname, 'file')
 	keyboard;
 end
 
-do_exp = [0 0 1 0 0 0];
+do_exp = [0 1 0 1 1 0];
 if do_exp(1)
 	aaa = find(alphas == 0.5);
 	[x(:,:,aaa), ~, err(:,aaa), cost(:,aaa), time(:,aaa)] = AL_tridiag_inpaint(y, D, CHW, CVW, ...
@@ -41,7 +41,11 @@ end
 if do_exp(5)
 	[x_ADMM, ~, err_ADMM, cost_ADMM, time_ADMM] = ADMM_tridiag_inpaint(y, D, CHW, CVW, beta, xinit, xtrue, niters, 'betaw', betaw, 'alphw', alphw, 'alph', alph, 'kapp', 7, 'pos', 0.01);
 end
-save(save_fname, '-append')
+if exist(save_fname, 'file')
+	save(save_fname, '-append')
+else
+	save(save_fname)
+end
 send_mai_text('done with inpainting timing except alph')
 if do_exp(6)
 	for aa = setdiff(1:length(alphas), aaa)

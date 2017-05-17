@@ -1,4 +1,3 @@
-%db_path = '~/Dropbox/fessler/writing/tridiag/';
 db_path = '~/Dropbox/fessler/writing/thesis/figures/';
 FontSize = 18;
 if ~isvar('colors')
@@ -15,6 +14,7 @@ if ~isvar('time_MFIS') && isvar('time_FIS')
         
 end
 
+clear *circ
 clear time_FIS;
 short_slice_str = 'inpaint';
 order = [2 3 1 4];
@@ -53,7 +53,7 @@ for kk = 1:length(exps)
                 eval(sprintf('%s%s = %s%s.'';', y_val, suffix, y_val, suffix));
         end
  	if eval(sprintf('prod(size(%s)) ~= niters +1', curr_name))
- 		Nd = eval(sprintf('prod(size(%s))/(niters + 1)', curr_name));
+ 		Nd = eval(sprintf('ceil(prod(size(%s))/(niters + 1))', curr_name));
  	else
 		Nd = 1;
  	end
@@ -77,7 +77,7 @@ for kk = 1:length(exps)
                         if isvar('lstring')
                                 legend_str = [legend_str; [' ' lstring{ii}]];
                         else
-                                legend_str = [legend_str; sprintf(' %s,%d', suffix(2:end), jj)];
+                                legend_str = [legend_str; sprintf(' %s,%d', suffix(2:end), jj)]
                         end
                 catch
                         printf('problem with command %s', plot_command);

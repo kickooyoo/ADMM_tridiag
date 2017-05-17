@@ -45,6 +45,9 @@ data_fname = sprintf('./inpainting_mat/%s/data_wavelet%d_SNR%d_reduce%d.mat', ob
 if exist(data_fname, 'file')
 	load(data_fname);
 	display(sprintf('loaded data from file %s', data_fname))
+	D = Ginpaint(samp);
+	CH = Cdiff1_ml([Nx Ny], 'offset', [1 0], 'type_diff', 'convn'); 
+	CV = Cdiff1_ml([Nx Ny], 'offset', [0 1], 'type_diff', 'convn'); % ml ver has imask 
 else
 	% ------ take measurements ------
 	try
@@ -93,8 +96,8 @@ if ~isvar('betas')
 else
 	beta = betas(ceil(length(betas)/2));
 	betaw = betaws(ceil(length(betaws)/2));
-	beta_circ = betas_circ(ceil(length(betas_circ)/2));
-	betaw_circ = betaws_circ(ceil(length(betaws_circ)/2));
+	beta_circ = beta;%betas_circ(ceil(length(betas_circ)/2));
+	betaw_circ = betaw;%betaws_circ(ceil(length(betaws_circ)/2));
 end
 	%beta = 0.02743;
 	%beta_circ = 0.02743;
@@ -133,7 +136,7 @@ end
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
 
 curr_folder = sprintf('./inpainting_mat/%s/', obj);
-slice_str = sprintf('wavelet%d_SNR%d_reduce%1.2d', wavelets, SNR, reduce);
+slice_str = sprintf('wavelet%d_SNR%d_reduce%1.2d_redo', wavelets, SNR, reduce);
 if ~isvar('true_opt')
 	true_opt = 'avg';%'inf'; % true
 end
@@ -142,9 +145,11 @@ end
 if (alphw == 1)
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
+	ALP2NC_inf_fname = sprintf('%s/x_ALP2NC_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 else
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
 	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
+	ALP2NC_inf_fname = sprintf('%s/x_ALP2NC_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta, alphw);
 end
 if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM')
 	if exist(MFISTA_inf_fname, 'file')
@@ -165,6 +170,7 @@ if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM'
 		display('no  ADMM inf found')
 		keyboard;
 	end
+	% load(ALP2NC_inf_fname);
 
 	if strcmp(true_opt, 'inf')
 		xtrue = xMFIS;

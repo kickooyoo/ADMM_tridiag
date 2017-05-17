@@ -79,7 +79,11 @@ if ~isvar('reduction')
 	reduction = 6;%6;
 	display(sprintf('sampling factor set to: %d', reduction));
 end
-[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw, truncate);
+if isvar('curr_folder')
+	[slice_str, ~] = get_exp_labels(orient, slice, reduction, use_raw, truncate);
+else
+	[slice_str, curr_folder] = get_exp_labels(orient, slice, reduction, use_raw, truncate);
+end
 
 if ~isvar('samp')
 	% generate sampling pattern
@@ -156,7 +160,7 @@ else
 end
 
 % build mask
-mask = generate_mask(orient, slice, Nx, Ny);
+mask = true(Nx, Ny);%generate_mask(orient, slice, Nx, Ny);
 
 % initialize with SoS zero-fill solution
 zero_fill = reshape(F'*y_noise, Nx, Ny, Nc)/(Nx * Ny);
