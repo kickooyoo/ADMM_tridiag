@@ -1,4 +1,7 @@
 % test tridiag inpaint
+
+new_Cdiff = 0;
+
 if ~isvar('wavelets')
 	wavelets = 1;
 end
@@ -46,8 +49,15 @@ if exist(data_fname, 'file')
 	load(data_fname);
 	display(sprintf('loaded data from file %s', data_fname))
 	D = Ginpaint(samp);
-	CH = Cdiff1_ml([Nx Ny], 'offset', [1 0], 'type_diff', 'convn'); 
-	CV = Cdiff1_ml([Nx Ny], 'offset', [0 1], 'type_diff', 'convn'); % ml ver has imask 
+	if 0 %new_Cdiff
+		omaskh = true(Nx, Ny); omask(1,:) = 0;
+		omaskv = true(Nx, Ny); omask(:,1) = 0;
+		CH = Cdiff1_ml([Nx Ny], 'offset', [1 0], 'type_diff', 'convn', 'omask', omaskh); 
+		CV = Cdiff1_ml([Nx Ny], 'offset', [0 1], 'type_diff', 'convn', 'omask', omaskv); % ml ver has imask 
+		Cdiffdir = '';
+	else
+		Cdiffdir = 'oldCdiff/';
+	end
 else
 	% ------ take measurements ------
 	try
@@ -84,10 +94,11 @@ alph = 0.5;
 alphw = 1;
 % ------ regularization parameters for SNR = 20, reduce = 1.5 ------
 beta_search_fname = sprintf('wavelet%d_SNR%d_reduce%1.2d.mat', wavelets, SNR, reduce);
-d = dir(sprintf('inpainting_mat/%s', obj));
+d = dir(sprintf('inpainting_mat/%s/%s', obj, Cdiffdir));
 for ii = 1:length(d)
 	if ~isempty(strfind(d(ii).name, beta_search_fname))
 		load(d(ii).name, 'betas', 'betaws', 'betas_circ', 'betaws_circ');
+		display(sprintf('loaded betas from %s', d(ii).name));
 	end
 end
 if ~isvar('betas')
@@ -122,6 +133,13 @@ if wavelets
 		CVW = [CV; betaw * (1-alphw) / beta * W]; 
 	end
 	RW = [CH; CV; betaw / beta * W];
+	if isvar('spH') && isvar('spV')
+		% [CHf2, spH] = update_Cdiff(CH, Nx, Ny);
+		% [CVf2, spV] = update_Cdiff(CV, Nx, Ny);
+		CHf2 = Gsparse(spH, 'idim', [Nx Ny], 'odim', [Nx Ny]);
+		CVf2 = Gsparse(spV, 'idim', [Nx Ny], 'odim', [Nx Ny]);
+		RWf2 = [CHf2; CVf2; betaw / beta * W];
+	end
 	RcircW = [Rcirc; betaw_circ / beta_circ * W];
 else        
 	betaw = 0;
@@ -135,7 +153,7 @@ end
 % ------
 % wavelets, CH, CV, R, Rcirc, RcircW, D, y, xinit, niters, mu0, mu1, mu2
 
-curr_folder = sprintf('./inpainting_mat/%s/', obj);
+curr_folder = sprintf('./inpainting_mat/%s/%s', obj, Cdiffdir);
 slice_str = sprintf('wavelet%d_SNR%d_reduce%1.2d_redo', wavelets, SNR, reduce);
 if ~isvar('true_opt')
 	true_opt = 'avg';%'inf'; % true
@@ -146,10 +164,12 @@ if (alphw == 1)
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 	ALP2NC_inf_fname = sprintf('%s/x_ALP2NC_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
+	SB_inf_fname = sprintf('%s/x_SB_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta);
 else
 	MFISTA_inf_fname = sprintf('%s/x_MFISTA_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
 	ADMM_inf_fname = sprintf('%s/x_ADMM_inf_%s_beta%.*d_%1.1dalphw.mat', curr_folder, slice_str, 3, beta, alphw);
 	ALP2NC_inf_fname = sprintf('%s/x_ALP2NC_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta, alphw);
+	SB_inf_fname = sprintf('%s/x_SB_inf_%s_beta%.*d.mat', curr_folder, slice_str, 3, beta, alphw);
 end
 if strcmp(true_opt, 'inf') || strcmp(true_opt, 'avg') || strcmp(true_opt, 'ADMM')
 	if exist(MFISTA_inf_fname, 'file')

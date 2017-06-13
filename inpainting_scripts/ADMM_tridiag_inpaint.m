@@ -218,7 +218,7 @@ for iter = 1:niters
                 subplot(2,3,1); im(reshape(x, Nx, Ny));
 		subplot(2,3,2); im(reshape(u2, Nx, Ny));
 		subplot(2,3,4); im(reshape(u0, Nx, Ny, 1 + (arg.betaw ~= 0)));
-                subplot(2,3,5); im(reshape(u1, Nx, Ny, 1 + (arg.betaw ~= 0)));
+                subplot(2,3,5); im(reshape(u1, Nx, Ny));%, 1 + (arg.betaw ~= 0))); % doesn't work for alphw = 1
 		subplot(2,3,3); plot(cost);
 		subplot(2,3,6); plot(err)
 		drawnow;

@@ -1,6 +1,10 @@
-function confirm_compile(file)
-% function confirm_compile(varargin)
-% recompiles mex file
+function confirm_compile(file, varargin)
+% function confirm_compile(file)
+% 
+% recompiles mex file 
+
+arg.fpath = './pthread_tutor/';
+arg = vararg_pair(arg, varargin);
 
 
 if ~exist(sprintf('./pthread_tutor/%s.c', file))
@@ -15,4 +19,4 @@ if ~strcmp(curr(end-11:end), 'ADMM_tridiag')
         keyboard;
 end
 % mex -O CFLAGS="\$CFLAGS -std=c99 -DMmex" -I./pthread_tutor/def/ ./pthread_tutor/tridiag_inv_mex_noni.c
-mex('-O', '-DMmex', '-I./pthread_tutor/def/', sprintf('./pthread_tutor/%s.c', file))
+mex('-O', '-DMmex', sprintf('-I%s/def/', fpath), sprintf('%s/%s.c', fpath, file))

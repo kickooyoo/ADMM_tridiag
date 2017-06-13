@@ -4,9 +4,9 @@ function [x, xsave, err, costOrig, time] = AL_P2_inpainting_ver2(y, D, R, ...
 %         xinit, niters, lambda, xtrue, varargin)
 % 
 % implements AL-P2 with option for CG on x-update for noncirc R
-% min 1/2 ||y - u2||^2 + beta ||u0||_1, u0 = Rx, u1 = x, u2 = Dx 
+% min 1/2 ||y - u2||^2 + beta ||u0||_1, u0 = Ru1, u1 = x, u2 = Dx 
 %
-% min 1/2 ||y - u2||^2 + beta ||u0||_1 mu0/2||u0 - Rx||^2 + mu1/2||u1 - x||^2 + mu2/2||u2 - Dx||^2 
+% min 1/2 ||y - u2||^2 + beta ||u0||_1 mu0/2||u0 - Ru1||^2 + mu1/2||u1 - x||^2 + mu2/2||u2 - Dx||^2 
 %
 % additional variable split compared to AL_P2_inpainting
 % inputs:
@@ -92,8 +92,8 @@ Hx = mu2 * eigvalsdd + mu1;
 
 y = single(y(:));
 x = single(xinit(:));
-u0 = R*x;
 u1 = x;
+u0 = R * u1;
 u2 = D * x;
 eta_0 = zeros(size(u0));
 eta_1 = zeros(size(u1));
@@ -101,7 +101,7 @@ eta_2 = zeros(size(u2));
 
 % shrinkage (e.g. soft thresholding) function, t is input, a is threshold
 if isempty(arg.pot)
-	arg.pot = potential_fun('l1', lambda/mu1);
+	arg.pot = potential_fun('l1', lambda/mu0);
 end
 shrink = @(a, t) arg.pot.shrink(a, t);
 
@@ -161,7 +161,6 @@ for ii = 1:niters
         if any(isnan(x)) || any(isinf(x))
                 keyboard
         end
-
         eta_0 = eta_0 - (u0 - Ru1);
         eta_1 = eta_1 - (u1 - x);
 	eta_2 = eta_2 - (u2 - D * x);
@@ -175,12 +174,10 @@ for ii = 1:niters
                 drawnow;
                 keyboard;
         end
-        
         if (calc_errcost)
                 err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, D, R, x, lambda);
         end
-	
         if mod(ii,100) == 0
                 printf('%d/%d iterations', ii, niters)
         	if mod(ii,1000) == 0 &  ~isempty(arg.save_progress)
@@ -203,20 +200,19 @@ rhs = y + mu2 * (D * x + eta_2);
 u2 = rhs ./ Hu2(:);
 end
 
+function u1 = u1_update(Q, D, W, P, u0, u1, x, mu0, mu1, R, eta_0, eta_1, ...
+	eigvalsrr, Nx, Ny, arg)
 % u1-update
 % problematic for non-circulant R
 % u1 = (mu0 R'R + u1 I)^(-1)(mu0 R'(u0 - eta_0) + mu1 (x + eta_1))
 % u1 = argmin mu0/2 ||u0 - R*u1 + eta_0||^2 + mu1/2 ||u1 - x - eta_1||^2
-function u1 = u1_update(Q, D, W, P, u0, u1, x, mu0, mu1, R, eta_0, eta_1, ...
-        eigvalsrr, Nx, Ny, arg)
-% (Q, D, W, P, v, x, z, mu1, u_z, R, eta_1, eta_z, eigvalsrr, Nx, Ny, arg)
 switch upper(arg.zmethod)
         case 'CG'
                 y = [u0 - eta_0; x + eta_1];
                 try
                         [xs, info] = qpwls_pcg1(double(u1), D, W, double(y), Gdiag(zeros(Nx*Ny, 1)), ...
-                                'niter', arg.inner_iter);%, 'stop_grad_tol', 1e-13, 'precon', P);
-			x = xs;
+                                'niter', arg.inner_iter, 'precon', P);%, 'stop_grad_tol', 1e-16);
+			u1 = xs;
                 catch
                         display('qpwls failed');
                         keyboard

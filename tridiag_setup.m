@@ -1,78 +1,36 @@
-% mai_setup.m
-% run in /mai_code
-nfs_broken = true;
-[~, machine] = system('hostname');
-machine = strtrim(machine);
+function machine = tridiag_setup(varargin)
 
-nfs_broken = ~exist('~/iv1h', 'dir') && ...
-        isempty([strfind(lower(machine), 'iv1') strfind(lower(machine), 'vega')]);
-if nfs_broken
-	display('provide alternate home path');
-	home = '/net/iv1/home/mtle/';
+if (nargin == 2) && strcmp(varargin{1}, 'irt_choice')
+	irt_choice = varargin{2};
 else
-	home = '~/iv1h/';
+	irt_choice = 'dev';
 end
 
-switch machine
-    case {'eecs-IV1', 'iv1', sprintf('\niv1')}
-        addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
-	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
-        addpath(genpath('~/Documents/mai_code/ADMM_tridiag'))
-        addpath(genpath('~/Documents/mai_code/util'))
-        addpath(genpath('~/Documents/mai_code/spline_basis'))
-        addpath(genpath('~/Documents/mai_code/pthread_tutor'))
-	addpath('~/Documents/contrib/ramani_MFISTA');
-	addpath('~/Documents/contrib/ramani_fbrain');
-	home_path = '~/';
+addpath('../')
+[id, machine, home_path] = mai_setup(0, 0, irt_choice);
+if length(machine) > 4	
+	machine = machine(1:4);
+end
+
+switch id
+    case 'iv1'
+	%addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
 	db_path = '~/Dropbox/fessler/experimental_data/tridiag/';
-	if nfs_broken
-		[~, machine] = system('hostname');
-		if isempty(strfind(lower(machine), 'iv1'))
-			db_path = '';
-		end
-		display('warning NFS broken, assuming iv1 paths');
-	end
-    case 'mpel8.eecs.umich.edu'
-        addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
-	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
-        addpath(genpath('~/iv1h/Documents/mai_code/ADMM_tridiag'))
-        addpath(genpath('~/iv1h//Documents/mai_code/util'))
-        addpath(genpath('~/iv1h//Documents/mai_code/spline_basis'))
-        addpath(genpath('~/iv1h//Documents/mai_code/pthread_tutor'))
-	addpath('~/iv1h/Documents/contrib/ramani_MFISTA');
-	addpath('~/iv1h/Documents/contrib/ramani_fbrain');
-	home_path = '~/iv1h/';
+    case 'mpel8'
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
-    case {'ir63.eecs.umich.edu', 'ir72.eecs.umich.edu', 'ir71.eecs.umich.edu', 'ir74'}
-        addpath('/n/ire/Volumes/s2/fessler/web/irt/irt')
-	addpath('/n/ire/Volumes/s2/fessler/web/irt/irt/contrib/ramani/al-p2');
-        addpath(genpath(sprintf('%sDocuments/mai_code/util', home)))
-        addpath(genpath(sprintf('%sDocuments/mai_code/ADMM_tridiag', home)))
-        addpath(genpath(sprintf('%sDocuments/mai_code/spline_basis', home)))
-        addpath(genpath(sprintf('%sDocuments/mai_code/pthread_tutor', home)))
-	addpath(sprintf('%sDocuments/contrib/ramani_MFISTA', home));
-	addpath(sprintf('%sDocuments/contrib/ramani_fbrain', home));
-	home_path = '~/iv1h/';
+    case {'ir72'; 'ir'}
 	db_path = '~/iv1h/Dropbox/fessler/experimental_data/tridiag/';
-	if ~isempty(strfind(machine, 'ir71'))
-		machine = 'r71';
-	end
     case 'vega'
-        addpath('/Users/mai/Documents/irt')
-	addpath('/Users/mai/Documents/irt/contrib/ramani/al-p2');
-        addpath(genpath('/Users/mai/Documents/mai_code'))
-        addpath(genpath('/Users/mai/Documents/mai_code/ADMM_tridiag'))
-        addpath(genpath('/Users/mai/Documents/contrib'))
-        addpath(genpath('/Users/mai/Documents/mai_code/util'))
-        addpath(genpath('/Users/mai/Documents/mai_code/spline_basis'))
         addpath(genpath('/Users/mai/Documents/data/2010-07-06-fessler-3d/code'))
 	addpath('/Users/mai/Documents/irt/reproduce/ramani-12-asb/2011-12-19');
-	addpath('/Users/mai/Documents/contrib/ramani_MFISTA');
-	home_path = '/Users/mai/';
 	db_path = '~/Dropbox/fessler/experimental_data/tridiag_vega/';
     otherwise
         display('unknown machine');
 end
-if ~exist('im','file')
-	setup;
-end
+
+
+addpath(genpath(sprintf('%s/Documents/mai_code/spline_basis', home_path)))
+addpath(genpath(sprintf('%s/Documents/mai_code/pthread_tutor', home_path)))
+addpath(genpath(sprintf('%s/Documents/contrib/ramani_MFISTA', home_path)))
+addpath(genpath(sprintf('%s/Documents/contrib/ramani_fbrain', home_path)))
+addpath(genpath(sprintf('%s/Documents/mai_code/ADMM_tridiag', home_path)))

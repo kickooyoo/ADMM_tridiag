@@ -1,4 +1,4 @@
-db_path = '~/Dropbox/fessler/writing/thesis/figures/';
+db_path = '/nfs/iv1/home/mtle/Dropbox/fessler/writing/thesis/figures/'
 FontSize = 18;
 if ~isvar('colors')
         colors = 'cmgkbry';
@@ -13,20 +13,23 @@ if ~isvar('time_MFIS') && isvar('time_FIS')
         time_MFIS = time_FIS;
         
 end
-
+niters = 10000;
 clear *circ
-clear time_FIS;
+clear *MFISinit
+clear time_P2
 short_slice_str = 'inpaint';
-order = [2 3 1 4];
-x = x(:,:,1);
-err = err(:,1);
-time = time(:,1);
-% lstring = {'AL-tridiag-inpaint'; 'AL-P2-NC-inpaint'; 'AL-P2-inpaint'};
+order = [5 3 4 2 1];
+if size(time,2) > 1
+	x = x(:,:,1);
+	err = err(:,1);
+	time = time(:,1);
+end
+lstring = {'AL-tridiag'; 'ADMM-tridiag'; 'MFISTA'; 'ALP2-noncirc'; 'Split Bregman'};
 MarkerSize = 10;
 LineWidth = 2;
 exps = who('time*');
 start_ndx = 1;
-end_ndx = 200;%niters+1;
+end_ndx = niters+1;
 if ~isvar('orn_ndx')
         orn_ndx = round(end_ndx/4);
 end
@@ -133,9 +136,12 @@ set(gca,'FontSize', FontSize)
 end
 %%
 
+input('save figures? Ctrl+C to cancel')
+
 title('');
+xlim([0 5000])
 save_im(db_path, sprintf('figs/%s_iter_%s', short_slice_str, machine(1:3)))
 close;
 title('');
-xlim([0 50])
+xlim([0 500])
 save_im(db_path, sprintf('figs/%s_timing_%s', short_slice_str, machine(1:3)))
