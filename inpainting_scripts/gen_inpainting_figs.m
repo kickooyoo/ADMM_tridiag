@@ -33,7 +33,7 @@ figure; im(xinit.', [0 1])
 axis off; title(''); %colorbar
 save_im(curr_path, sprintf('%s/inpaint_xinit_SNR%d_r%1.2d', obj, SNR, reduce))
 %%
-full_err = calc_NRMSE_over_mask(x_circ, xtrue);
+full_err = calc_NRMSE(x_circ, xtrue);
 circ_diff = abs(x_circ - xtrue);
 figure; imshow(circ_diff, [0 0.1]);
 colormap(flipud(colormap));
@@ -51,7 +51,7 @@ axis off; title(''); %colorbar
 save_im(curr_path, sprintf('%s/inpaint_circ_SNR%d_r%1.2d', obj, SNR, reduce))
 
 %%
-full_err = calc_NRMSE_over_mask(x, xtrue);
+full_err = calc_NRMSE(x, xtrue);
 diff = abs(x - xtrue);
 figure; imshow(diff,[0 0.1]);
 colormap(flipud(colormap));

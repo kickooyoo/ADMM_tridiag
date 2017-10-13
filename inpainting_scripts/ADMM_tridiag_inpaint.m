@@ -145,7 +145,7 @@ flipDD = eig_DD.';
 diagvalsCCT = diagCCT + (1-arg.alph)^2 * flipDD; % mu1 Cv'Cv + mu2 I
 diagvalsCC = diagCC + arg.alph^2 .* eig_DD; % diag CC = mu0 Ch'Ch + mu2 I
 
-err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+err(1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost_tridiag_inpaint(y, D, CH, CV, x, beta);
 time(1) = toc;
 tridiag_time(1) = 0;
@@ -212,7 +212,7 @@ for iter = 1:niters
 	eta3 = eta3 - (- v + x);
         if strcmp(arg.timing, 'indiv'), all_time.eta(iter) = toc(eta_time); end
         time(iter + 1) = toc(iter_start);
-	err(iter + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+	err(iter + 1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
         
         if arg.debug
                 subplot(2,3,1); im(reshape(x, Nx, Ny));

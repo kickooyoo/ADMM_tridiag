@@ -142,7 +142,7 @@ if(arg.attempt_par)
         end
 end
 
-err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+err(1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x, arg);
 time(1) = toc;
 if arg.prof
@@ -336,7 +336,7 @@ while iter <= niters
         if arg.timing, eta_times(iter) = toc(eta_start); end
         
         time(iter + 1, 1) = toc(iter_start);
-	err(iter + 1, 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+	err(iter + 1, 1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)

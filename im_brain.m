@@ -1,6 +1,7 @@
 function im_brain(img, varargin)
 arg.clim = [];
 arg.orient = 'axial';
+arg.abs = true;
 arg = vararg_pair(arg, varargin);
 
 switch arg.orient 
@@ -13,17 +14,20 @@ switch arg.orient
                 perm = [1 2 3];
                 img = flipdim(img, 2);
         case 'sim'
-                perm = [2 1 3];
+                perm = [1 2 3];
         otherwise
                 display(sprintf('%s is unknown orientation for im_brain()'));
                 keyboard
 end
 
         
+if arg.abs 
+        img = abs(img);
+end
 if isempty(arg.clim)
-        im(permute(abs(img), perm))
+        im(permute(img, perm))
 else
-        im(permute(abs(img), perm), arg.clim)
+        im(permute(img, perm), arg.clim)
 end
 
 switch arg.orient

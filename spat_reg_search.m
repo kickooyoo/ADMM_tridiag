@@ -24,11 +24,11 @@ for ii = 1:length(betas)
 				[x_tri_inf, ~, ~, costOrig_tri, time_tri] = ADMM_tridiag(y_noise, F, S, CH, CV, beta, xinit_tmp, zeros(size(SoS)), niters);
 				save(fname, 'x_tri_inf', 'body_coil');
 				xhat_betas(:,:,ii) = x_tri_inf;
-				body_coil_err(ii) = calc_NRMSE_over_mask(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
+				body_coil_err(ii) = calc_NRMSE(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
 			elseif exist(fname)
 				load(fname, 'x_tri_inf', 'body_coil');
 				xhat_betas(:,:,ii) = x_tri_inf;
-				body_coil_err(ii) = calc_NRMSE_over_mask(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
+				body_coil_err(ii) = calc_NRMSE(x_tri_inf./max(abs(col(x_tri_inf))), body_coil./max(abs(col(body_coil))), mask);
 			else
 				display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 			end
@@ -44,7 +44,7 @@ for ii = 1:length(betas)
 				%else 
 				%	display('where is MFISTA output?')
 				%end
-				body_coil_err(ii) = calc_NRMSE_over_mask(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
+				body_coil_err(ii) = calc_NRMSE(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
 			elseif exist(fname)
 				load(fname, '*MFIS*', 'body_coil');
 				%if isvar('x_MFISTA')
@@ -54,7 +54,7 @@ for ii = 1:length(betas)
 				%else 
 				%	display('where is MFISTA output?')
 				%end
-				body_coil_err(ii) = calc_NRMSE_over_mask(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
+				body_coil_err(ii) = calc_NRMSE(x_MFISTA./max(abs(col(x_MFISTA))), body_coil./max(abs(col(body_coil))), mask);
 			else
 				display(sprintf('%s does not exist (beta = 2^%d)', fname, log2(beta)))
 			end

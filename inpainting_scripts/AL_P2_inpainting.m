@@ -127,7 +127,7 @@ if (calc_errcost)
         calc_orig_cost = @(y, D, R, x, lambda) calc_cost_tridiag_inpaint(y, D, R, 0, x, lambda);
 	%norm(col(y - D*x),2)^2/2 + ...
          %       lambda* sum(col(arg.pot.potk(col(R*x))));
-        err = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+        err = calc_NRMSE(x, xtrue, true(size(arg.mask)));
         costOrig = calc_orig_cost(y, D, R, x, lambda);
 end
 
@@ -158,7 +158,7 @@ for ii = 1:niters
         eta_0 = eta_0 - (u0 - Rx);
         eta_1 = eta_1 - (u1 - x);
         time = [time toc(iter_start)];
-        if arg.debug && mod(ii, 10) == 0
+        if arg.debug && mod(ii, 100) == 0
                 subplot(2,2,1); im(reshape(x, Nx, Ny));
                 subplot(2,2,2); im(reshape(u0, numel(u0)/Ny, Ny));
                 subplot(2,2,3); im(reshape(u1, Nx, Ny));
@@ -169,7 +169,7 @@ for ii = 1:niters
         end
         
         if (calc_errcost)
-                err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+                err(ii + 1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, D, R, x, lambda);
         end
 	
@@ -217,6 +217,7 @@ switch upper(arg.zmethod)
                 rhs = reshape(mu0 * R' * (u0 - eta_0) + mu1 * (u1 - eta_1), Nx, Ny);
                 invMat = mu0 * eigvalsrr + mu1;
                 x = Q' * col((Q * rhs(:)) ./ col(invMat)) / (Nx*Ny);
+                y = x;
         otherwise
                 display(sprintf('unknown option for z-update: %s', arg.zmethod));
 end

@@ -141,7 +141,7 @@ if arg.compile_mex
         confirm_compile('tridiag_inv_mex_noni');
 end
 
-err(1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+err(1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
 cost(1) = calc_cost(beta, CH, CV, F, S, y, x);
 time(1) = toc;
 tridiag_time(1) = 0;
@@ -177,7 +177,7 @@ for iter = 1:niters
         eta4 = eta4 - (x - v4);
         
         time(iter + 1, 1) = toc(iter_start);
-	err(iter + 1, 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+	err(iter + 1, 1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
 
         if mod(iter,10) == 0
                 printf('%d/%d iterations',iter,niters)

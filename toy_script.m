@@ -92,7 +92,7 @@ return
         beta, xinit, img, niters, 'mu_args', {'faNcy_mu34', true, 'test', 'edgeRRapproxcheck'});
 
 figure; subplot(2,2,1); im(xinit); subplot(2,2,2); im(xhat_bs); subplot(2,2,3); im(xhat_P2); subplot(2,2,4); im(xhat_tri)
-calc_NRMSE_over_mask(xhat_bs, xhat_tri, true(Nx,Ny))
+calc_NRMSE(xhat_bs, xhat_tri, true(Nx,Ny))
 
 return
 save('races_results.mat','beta','alph','err','xhat_P2','xsaved_P2','dist_to_xinf_P2','xhat_tri','xsaved_tri','dist_to_xinf_tri','xhat_FP','xsaved_tri','dist_to_xinf_FP','img','noisey','F','S','C1','C2','mu','snr');

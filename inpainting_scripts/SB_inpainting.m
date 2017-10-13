@@ -121,7 +121,7 @@ if (calc_errcost)
         calc_orig_cost = @(y, D, R, x, lambda) calc_cost_tridiag_inpaint(y, D, R, 0, x, lambda);
 	%norm(col(y - D*x),2)^2/2 + ...
          %       lambda* sum(col(arg.pot.potk(col(R*x))));
-        err = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+        err = calc_NRMSE(x, xtrue, true(size(arg.mask)));
         costOrig = calc_orig_cost(y, D, R, x, lambda);
 end
 
@@ -149,7 +149,7 @@ for ii = 1:niters
                 keyboard;
         end
         if (calc_errcost)
-                err(ii + 1) = calc_NRMSE_over_mask(x, xtrue, true(size(arg.mask)));
+                err(ii + 1) = calc_NRMSE(x, xtrue, true(size(arg.mask)));
                 costOrig(ii + 1) = calc_orig_cost(y, D, R, x, lambda);
         end
         if mod(ii,100) == 0
